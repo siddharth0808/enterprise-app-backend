@@ -1,0 +1,48 @@
+{
+  "name": "enterprise-app-infra",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "cdk": "cdk",
+    "deploy:all": "cdk deploy --all",
+    "deploy:dev": "cdk deploy --all --context stage=dev",
+    "deploy:prod": "cdk deploy --all --context stage=prod",
+    "destroy:all": "cdk destroy --all",
+    "destroy:dev": "cdk destroy --all --context stage=dev",
+    "destroy:prod": "cdk destroy --all --context stage=prod",
+    "deploy:lambda": "cdk deploy LambdaStack --context stage=dev",
+    "destroy:lambda": "cdk destroy LambdaStack --context stage=dev",
+    "deploy:lambda-prod": "cdk deploy LambdaStack --context stage=prod",
+    "destroy:lambda-prod": "cdk destroy LambdaStack --context stage=prod",
+    "deploy:api": "cdk deploy ApiStack --context stage=dev",
+    "destroy:api": "cdk destroy ApiStack --context stage=dev",
+    "deploy:api-prod": "cdk deploy ApiStack --context stage=prod",
+    "destroy:api-prod": "cdk destroy ApiStack --context stage=prod",
+    "deploy:db": "cdk deploy DbStack --context stage=dev",
+    "destroy:db": "cdk destroy DbStack --context stage=dev",
+    "deploy:db-prod": "cdk deploy DbStack --context stage=prod",
+    "destroy:db-prod": "cdk destroy DbStack --context stage=prod",
+    "deploy:s3": "cdk deploy S3Stack --context stage=dev",
+    "destroy:s3": "cdk destroy S3Stack --context stage=dev",
+    "deploy:s3-prod": "cdk deploy S3Stack --context stage=prod",
+    "destroy:s3-prod": "cdk destroy S3Stack --context stage=prod",
+    "deploy:auth": "cdk deploy AuthStack --context stage=dev",
+    "destroy:auth": "cdk destroy AuthStack --context stage=dev",
+    "deploy:auth-prod": "cdk deploy AuthStack --context stage=prod",
+    "destroy:auth-prod": "cdk destroy AuthStack --context stage=prod",
+    "deploy:all-dev": "cdk deploy --all --context stage=dev",
+    "deploy:all-prod": "cdk deploy --all --context stage=prod"  
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "aws-cdk": "^2.150.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.262.1",
+    "constructs": "^10.3.0",
+    "esbuild": "^0.28.1"
+  }
+}

@@ -1,0 +1,11 @@
+
+infra/node_modules/
+infra/.env
+
+infra/cdk.out/
+
+functions/node_modules/
+functions/.env
+functions/dist/
+
+
