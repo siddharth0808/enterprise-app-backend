@@ -14,7 +14,7 @@ export function getClaims(event: APIGatewayProxyEventV2WithJWTAuthorizer) {
   const claims = event.requestContext.authorizer?.jwt?.claims ?? {};
   return {
     sub: claims.sub as string, // Cognito user id — use this as ownerId / customer id
-    phoneNumber: claims.phone_number as string | undefined,
+    fullName: claims.given_name as string | undefined,
     role: (claims['custom:role'] as string | undefined) ?? 'customer',
   };
 }
