@@ -9,6 +9,7 @@ export interface LambdaStackProps extends StackProps {
   businessTable: dynamodb.Table;
   productsTable: dynamodb.Table;
   ordersTable: dynamodb.Table;
+  transactionsTable: dynamodb.Table;
   productsBucket: s3.Bucket;
   stage?: string;
 }
@@ -18,6 +19,8 @@ export class LambdaStack extends Stack {
   public readonly productsFn: lambda.Function;
   public readonly ordersFn: lambda.Function;
   public readonly imagesFn: lambda.Function;
+  public readonly transactionsFn: lambda.Function;
+
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -63,5 +66,16 @@ export class LambdaStack extends Stack {
       environment: { PRODUCTS_BUCKET: props.productsBucket.bucketName },
     });
     props.productsBucket.grantReadWrite(this.imagesFn);
+
+    this.transactionsFn = new lambda.Function(this, `${APP_NAME}-transactionsFn-${props.stage}`, {
+      ...commonProps,
+      functionName: `${APP_NAME}-transactionsFn-${props.stage}`,
+      code: lambda.Code.fromAsset("../functions/dist/transactions"),
+      handler: 'index.handler',
+      environment: { PRODUCTS_TABLE: props.productsTable.tableName, TRANSACTIONS_TABLE: props.transactionsTable.tableName },
+    });
+    props.productsTable.grantReadWriteData(this.transactionsFn);
+    props.transactionsTable.grantReadWriteData(this.transactionsFn);
+
   }
 }

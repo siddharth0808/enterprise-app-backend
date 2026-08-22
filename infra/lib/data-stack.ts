@@ -13,6 +13,8 @@ export class DataStack extends Stack {
   public readonly businessTable: dynamodb.Table;
   public readonly productsTable: dynamodb.Table;
   public readonly ordersTable: dynamodb.Table;
+  public readonly transactionsTable: dynamodb.Table;
+
   public readonly productsBucket: s3.Bucket;
   public readonly imagesDistribution: cloudfront.Distribution;
 
@@ -35,6 +37,14 @@ export class DataStack extends Stack {
     this.productsTable = new dynamodb.Table(this, `${APP_NAME}-productsTable-${props.stage}`, {
       tableName: `${APP_NAME}-products-${props.stage}`,
       partitionKey: { name: 'businessId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+
+    this.transactionsTable = new dynamodb.Table(this, `${APP_NAME}-transactionsTable-${props.stage}`, {
+      tableName: `${APP_NAME}-transactions-${props.stage}`,
+      partitionKey: { name: 'productId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.RETAIN,

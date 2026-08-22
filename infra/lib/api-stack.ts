@@ -14,6 +14,7 @@ export interface ApiStackProps extends StackProps {
   productsFn: lambdaNode.NodejsFunction;
   ordersFn: lambdaNode.NodejsFunction;
   imagesFn: lambdaNode.NodejsFunction;
+  transactionsFn: lambdaNode.NodejsFunction;
   stage?: string;
 }
 
@@ -66,6 +67,10 @@ export class ApiStack extends Stack {
       "ImagesIntegration",
       props.imagesFn,
     );
+    const transactionsIntegration = new HttpLambdaIntegration(
+      "transactionsIntegration",
+      props.transactionsFn,
+    );
 
     httpApi.addRoutes({
       path: "/business/me",
@@ -84,6 +89,7 @@ export class ApiStack extends Stack {
       methods: [apigwv2.HttpMethod.POST],
       integration: productsIntegration,
     });
+
     httpApi.addRoutes({
       path: "/products/{businessId}",
       methods: [apigwv2.HttpMethod.GET],
@@ -91,26 +97,11 @@ export class ApiStack extends Stack {
     });
 
     httpApi.addRoutes({
-      path: "/orders",
-      methods: [apigwv2.HttpMethod.POST],
-      integration: ordersIntegration,
-    });
-    httpApi.addRoutes({
-      path: "/orders/{ownerId}",
-      methods: [apigwv2.HttpMethod.GET],
-      integration: ordersIntegration,
-    });
-    httpApi.addRoutes({
-      path: "/orders/{ownerId}/{orderId}/status",
-      methods: [apigwv2.HttpMethod.PATCH],
-      integration: ordersIntegration,
+      path: "/inventory/{businessId}/{productId}/transactions",
+      methods: [apigwv2.HttpMethod.POST, apigwv2.HttpMethod.GET],
+      integration: transactionsIntegration,
     });
 
-    httpApi.addRoutes({
-      path: "/images/presign",
-      methods: [apigwv2.HttpMethod.POST],
-      integration: imagesIntegration,
-    });
 
     new CfnOutput(this, "ApiUrl", { value: httpApi.apiEndpoint });
   }

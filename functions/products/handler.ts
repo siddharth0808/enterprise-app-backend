@@ -32,7 +32,9 @@ export const handler = async (event: APIGatewayProxyEventV2WithJWTAuthorizer) =>
       minimumStock: Number(body.minimumStock),
       category: body.category,
       sku: body.sku,
-      brand:body.brand
+      brand:body.brand,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     await ddb.send(new PutCommand({ TableName: PRODUCTS_TABLE, Item: item }));
