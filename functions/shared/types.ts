@@ -1,27 +1,36 @@
-
 export interface Business {
-  id:string;
+  id: string;
   ownerId: string; // Cognito sub
   businessName: string;
   ownerName: string;
   email: string;
   businessAddress: string;
   mobile: string;
-  businessType:string;
-  createdAt:string
-  updatedAt:string;
+  businessType: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Products {
   ownerId: string;
-  productId: string;
-  productName: string;
-  productPrice: number;
-  productImgUri: string;
-  productDescription: string;
+  businessId: string;
+  id: string;
+  name: string;
+  brand: string;
+  costPrice: number;
+  sellingPrice: number;
+  currentStock: number;
+  minimumStock: number;
+  category: string;
+  sku: string;
 }
 
-export type OrderStatus = 'PLACED' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED' | 'SHIPPED';
+export type OrderStatus =
+  | "PLACED"
+  | "ACCEPTED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "SHIPPED";
 
 export interface OrderLine {
   productId: string;

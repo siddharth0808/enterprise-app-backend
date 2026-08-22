@@ -15,18 +15,24 @@ export const handler = async (event: APIGatewayProxyEventV2WithJWTAuthorizer) =>
   if (method === 'POST') {
     const { sub } = getClaims(event);
     const body = JSON.parse(event.body ?? '{}');
-
-    if (!body.productName || body.productPrice == null) {
-      return json(400, { message: 'productName and productPrice are required' });
+    const required = ["name", "costPrice", "sellingPrice"];
+    const missing = required.filter((field) => !body[field]);
+    if (missing.length) {
+      return json(400, { message: `Missing fields: ${missing.join(", ")}` });
     }
 
     const item: Products = {
       ownerId: sub,
-      productId: randomUUID(),
-      productName: body.productName,
-      productPrice: Number(body.productPrice),
-      productImgUri: body.productImgUri ?? '',
-      productDescription: body.productDescription ?? '',
+      businessId:body.businessId,
+      id: randomUUID(),
+      name: body.name,
+      costPrice: Number(body.costPrice),
+      sellingPrice: Number(body.sellingPrice),
+      currentStock: Number(body.currentStock),
+      minimumStock: Number(body.minimumStock),
+      category: body.category,
+      sku: body.sku,
+      brand:body.brand
     };
 
     await ddb.send(new PutCommand({ TableName: PRODUCTS_TABLE, Item: item }));
@@ -34,14 +40,14 @@ export const handler = async (event: APIGatewayProxyEventV2WithJWTAuthorizer) =>
   }
 
   if (method === 'GET') {
-    const ownerId = event.pathParameters?.ownerId;
-    if (!ownerId) return json(400, { message: 'ownerId is required' });
+    const businessId = event.pathParameters?.businessId;
+    if (!businessId) return json(400, { message: 'businessId is required' });
 
     const result = await ddb.send(
       new QueryCommand({
         TableName: PRODUCTS_TABLE,
-        KeyConditionExpression: 'ownerId = :ownerId',
-        ExpressionAttributeValues: { ':ownerId': ownerId },
+        KeyConditionExpression: 'businessId = :businessId',
+        ExpressionAttributeValues: { ':businessId': businessId },
       })
     );
     return json(200, result.Items ?? []);
