@@ -35,7 +35,7 @@ export class LambdaStack extends Stack {
       handler: 'index.handler',
       environment: { BUSINESS_TABLE: props.businessTable.tableName },
     });
-    props.businessTable.grantWriteData(this.businessSetup);
+    props.businessTable.grantReadWriteData(this.businessSetup);
 
     this.productsFn = new lambda.Function(this, `${APP_NAME}-productsFn-${props.stage}`, {
       ...commonProps,
