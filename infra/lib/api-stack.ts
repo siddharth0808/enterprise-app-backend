@@ -34,7 +34,7 @@ export class ApiStack extends Stack {
       `${APP_NAME}-api-${props.stage}`,
       {
         apiName: `${APP_NAME}-api-${props.stage}`,
-
+        createDefaultStage: false,
         corsPreflight: {
           allowOrigins: ["*"], // tighten once the app's origin(s) are known
           allowMethods: [apigwv2.CorsHttpMethod.ANY],
@@ -43,6 +43,12 @@ export class ApiStack extends Stack {
         defaultAuthorizer: authorizer,
       },
     );
+
+    new apigwv2.HttpStage(this, `${APP_NAME}-stage-${props.stage}`, {
+      httpApi,
+      stageName: props.stage,
+      autoDeploy: true,
+    });
 
     const businessSetupIntegration = new HttpLambdaIntegration(
       "BusinessSetupIntegration",
