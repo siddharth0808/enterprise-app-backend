@@ -59,7 +59,7 @@ export const handler = async (
       id: randomUUID(),
       type: body.type,
       quantity: Number(body.quantity),
-      previousStock: Number(body.previousStock),
+      previousStock: Number(currentStock),
       newStock,
       reason: body.reason ?? "",
       createdBy: fullName ?? "",
