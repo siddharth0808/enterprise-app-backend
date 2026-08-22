@@ -7,6 +7,9 @@ export interface Business {
   email: string;
   businessAddress: string;
   mobile: string;
+  businessType:string;
+  createdAt:string
+  updatedAt:string;
 }
 
 export interface Products {

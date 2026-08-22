@@ -23,7 +23,7 @@ export const handler = async (
   const body = JSON.parse(event.body ?? "{}");
 
   if (method === "POST" && path.includes("/setup")) {
-    const required = ["name", "ownerName", "email", "address", "phone"];
+    const required = ["name", "ownerName", "email", "address", "phone", "businessType"];
     const missing = required.filter((field) => !body[field]);
     if (missing.length) {
       return json(400, { message: `Missing fields: ${missing.join(", ")}` });
@@ -37,6 +37,10 @@ export const handler = async (
       email: body.email,
       businessAddress: body.address,
       mobile: body.phone,
+      businessType:body.businessType,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+
     };
 
     await ddb.send(
