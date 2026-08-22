@@ -1,11 +1,12 @@
 
 export interface Business {
+  id:string;
   ownerId: string; // Cognito sub
   businessName: string;
   ownerName: string;
   email: string;
   businessAddress: string;
-  ownerMobile: string;
+  mobile: string;
 }
 
 export interface Products {
