@@ -1,0 +1,47 @@
+
+name: AI Interview Coach Backend Deploy QA
+
+on:
+  push:
+    branches:
+      - 'qa'
+    
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-east-1
+      STAGE: qa
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '24'
+      - name: Print versions
+        run: |
+          node -v
+          npm -v
+
+      - name: Install lamda-packages dependencies
+        working-directory: backend
+        run: npm install && npm run build
+
+      - name: Install dependencies
+        working-directory: infra
+        run: npm install
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to QA
+        working-directory: infra
+        run: npx cdk deploy --require-approval never --all --context stage=qa

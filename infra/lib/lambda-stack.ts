@@ -3,6 +3,7 @@ import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import { APP_NAME } from '../constant';
 
 export interface LambdaStackProps extends StackProps {
   businessTable: dynamodb.Table;
@@ -13,7 +14,7 @@ export interface LambdaStackProps extends StackProps {
 }
 
 export class LambdaStack extends Stack {
-  public readonly registerFn: lambda.Function;
+  public readonly businessSetup: lambda.Function;
   public readonly productsFn: lambda.Function;
   public readonly ordersFn: lambda.Function;
   public readonly imagesFn: lambda.Function;
@@ -27,36 +28,36 @@ export class LambdaStack extends Stack {
       memorySize: 256,
     };
 
-    this.registerFn = new lambda.Function(this, `RegisterFn-${props.stage}`, {
+    this.businessSetup = new lambda.Function(this, `${APP_NAME}-businessSetup-${props.stage}`, {
       ...commonProps,
-      functionName: `RegisterFn-${props.stage}`,
-      code: lambda.Code.fromAsset("../functions/dist/register"),
+      functionName: `${APP_NAME}-businessSetup-${props.stage}`,
+      code: lambda.Code.fromAsset("../functions/dist/businessSetup"),
       handler: 'index.handler',
       environment: { BUSINESS_TABLE: props.businessTable.tableName },
     });
-    props.businessTable.grantWriteData(this.registerFn);
+    props.businessTable.grantWriteData(this.businessSetup);
 
-    this.productsFn = new lambda.Function(this, `ProductsFn-${props.stage}`, {
+    this.productsFn = new lambda.Function(this, `${APP_NAME}-productsFn-${props.stage}`, {
       ...commonProps,
-      functionName: `ProductsFn-${props.stage}`,
+      functionName: `${APP_NAME}-productsFn-${props.stage}`,
       code: lambda.Code.fromAsset("../functions/dist/products"),
       handler: 'index.handler',
       environment: { PRODUCTS_TABLE: props.productsTable.tableName },
     });
     props.productsTable.grantReadWriteData(this.productsFn);
 
-    this.ordersFn = new lambda.Function(this, `OrdersFn-${props.stage}`, {
+    this.ordersFn = new lambda.Function(this, `${APP_NAME}-ordersFn-${props.stage}`, {
       ...commonProps,
-      functionName: `OrdersFn-${props.stage}`,
+      functionName: `${APP_NAME}-ordersFn-${props.stage}`,
       code: lambda.Code.fromAsset("../functions/dist/orders"),
       handler: 'index.handler',
       environment: { ORDERS_TABLE: props.ordersTable.tableName },
     });
     props.ordersTable.grantReadWriteData(this.ordersFn);
 
-    this.imagesFn = new lambda.Function(this, `ImagesFn-${props.stage}`, {
+    this.imagesFn = new lambda.Function(this, `${APP_NAME}-imagesFn-${props.stage}`, {
       ...commonProps,
-      functionName: `ImagesFn-${props.stage}`,
+      functionName: `${APP_NAME}-imagesFn-${props.stage}`,
       code: lambda.Code.fromAsset("../functions/dist/images"),
       handler: 'index.handler',
       environment: { PRODUCTS_BUCKET: props.productsBucket.bucketName },

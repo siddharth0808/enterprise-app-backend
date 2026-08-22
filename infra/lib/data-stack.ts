@@ -4,6 +4,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import { APP_NAME } from '../constant';
 
 export interface DataStackProps extends StackProps {
   stage?: string;
@@ -20,21 +21,19 @@ export class DataStack extends Stack {
     super(scope, id, props);
 
     // Businesses — one item per business. PK = ownerId (Cognito sub).
-    this.businessTable = new dynamodb.Table(this, `BusinessTable-${props.stage}`, {
-      tableName: `Business-${props.stage}`,
+    this.businessTable = new dynamodb.Table(this, `${APP_NAME}-businessTable-${props.stage}`, {
+      tableName: `${APP_NAME}-business-${props.stage}`,
       partitionKey: { name: 'ownerId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.RETAIN,
     });
-    // lookup by phone number for login, mirrors the old "Canteen Owners" keyed-by-phone structure
     this.businessTable.addGlobalSecondaryIndex({
       indexName: 'byPhone',
       partitionKey: { name: 'ownerMobile', type: dynamodb.AttributeType.STRING },
     });
 
-    // Products — PK = ownerId, SK = productId. All products for one canteen live together.
-    this.productsTable = new dynamodb.Table(this, `ProductsTable-${props.stage}`, {
-      tableName: `Products-${props.stage}`,
+    this.productsTable = new dynamodb.Table(this, `${APP_NAME}-productsTable-${props.stage}`, {
+      tableName: `${APP_NAME}-products-${props.stage}`,
       partitionKey: { name: 'ownerId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'productId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -42,8 +41,8 @@ export class DataStack extends Stack {
     });
 
     // Orders — PK = ownerId, SK = orderId. GSI lets a customer look up their own orders.
-    this.ordersTable = new dynamodb.Table(this, `OrdersTable-${props.stage}`, {
-      tableName: `Orders-${props.stage}`,
+    this.ordersTable = new dynamodb.Table(this, `${APP_NAME}-ordersTable-${props.stage}`, {
+      tableName: `${APP_NAME}-orders-${props.stage}`,
       partitionKey: { name: 'ownerId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'orderId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -58,8 +57,8 @@ export class DataStack extends Stack {
 
     // Images — product photos. Lambda hands out presigned PUT/GET URLs; the app
     // never gets direct bucket credentials.
-    this.productsBucket = new s3.Bucket(this, `ProductsBucket-${props.stage}`, {
-      bucketName: undefined, // let CDK generate a unique name
+    this.productsBucket = new s3.Bucket(this, `${APP_NAME}-productsBucket-${props.stage}`, {
+      bucketName: `${APP_NAME}-products-${props.stage}`, // let CDK generate a unique name
       removalPolicy: RemovalPolicy.RETAIN,
       cors: [
         {
@@ -86,6 +85,8 @@ export class DataStack extends Stack {
     });
 
     new CfnOutput(this, 'ProductsBucketName', { value: this.productsBucket.bucketName });
-      new CfnOutput(this, 'ImagesDistributionDomain', { value: this.imagesDistribution.distributionDomainName });
+      new CfnOutput(this, "ImagesDistributionDomain", {
+        value: this.imagesDistribution.distributionDomainName,
+      });
   }
 }

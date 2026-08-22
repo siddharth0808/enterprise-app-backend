@@ -10,7 +10,7 @@ rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
 
 const handlers = {
-  register: path.join(__dirname, 'register', 'handler.ts'),
+  businessSetup: path.join(__dirname, 'businessSetup', 'handler.ts'),
   products: path.join(__dirname, 'products', 'handler.ts'),
   orders: path.join(__dirname, 'orders', 'handler.ts'),
   images: path.join(__dirname, 'images', 'handler.ts'),

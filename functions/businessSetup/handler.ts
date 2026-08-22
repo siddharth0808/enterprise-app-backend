@@ -8,8 +8,7 @@ const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
 
 // Cognito already created the user account (sign-up happens client-side against
-// the User Pool). This endpoint just writes the canteen profile row once the
-// owner is authenticated, mirroring RegisterActivity.java's Firebase write.
+// the User Pool). 
 export const handler = async (event: APIGatewayProxyEventV2WithJWTAuthorizer) => {
   const { sub } = getClaims(event);
   const body = JSON.parse(event.body ?? '{}');

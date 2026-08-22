@@ -1,15 +1,16 @@
-import { Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-import * as apigwv2 from 'aws-cdk-lib/aws-apigatewayv2';
-import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
-import { HttpJwtAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
-import * as lambdaNode from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Stack, StackProps, CfnOutput } from "aws-cdk-lib";
+import { Construct } from "constructs";
+import * as apigwv2 from "aws-cdk-lib/aws-apigatewayv2";
+import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
+import { HttpJwtAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
+import * as cognito from "aws-cdk-lib/aws-cognito";
+import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
+import { APP_NAME } from "../constant";
 
 export interface ApiStackProps extends StackProps {
   userPool: cognito.UserPool;
   userPoolClient: cognito.UserPoolClient;
-  registerFn: lambdaNode.NodejsFunction;
+  businessSetupFn: lambdaNode.NodejsFunction;
   productsFn: lambdaNode.NodejsFunction;
   ordersFn: lambdaNode.NodejsFunction;
   imagesFn: lambdaNode.NodejsFunction;
@@ -23,66 +24,82 @@ export class ApiStack extends Stack {
     // API Gateway validates the Cognito-issued JWT on every request natively —
     // this is the only "auth" component in the whole stack, and it involves no Lambda.
     const authorizer = new HttpJwtAuthorizer(
-      `enterprise-app-authorizer-${props.stage}`,
+      `${APP_NAME}-authorizer-${props.stage}`,
       `https://cognito-idp.${this.region}.amazonaws.com/${props.userPool.userPoolId}`,
-      { jwtAudience: [props.userPoolClient.userPoolClientId] }
+      { jwtAudience: [props.userPoolClient.userPoolClientId] },
     );
 
-    const httpApi = new apigwv2.HttpApi(this, `enterprise-app-api-${props.stage}`, {
-      apiName: `enterprise-app-api-${props.stage}`,
-      
-      corsPreflight: {
-        allowOrigins: ['*'], // tighten once the app's origin(s) are known
-        allowMethods: [apigwv2.CorsHttpMethod.ANY],
-        allowHeaders: ['authorization', 'content-type'],
+    const httpApi = new apigwv2.HttpApi(
+      this,
+      `${APP_NAME}-api-${props.stage}`,
+      {
+        apiName: `${APP_NAME}-api-${props.stage}`,
+
+        corsPreflight: {
+          allowOrigins: ["*"], // tighten once the app's origin(s) are known
+          allowMethods: [apigwv2.CorsHttpMethod.ANY],
+          allowHeaders: ["authorization", "content-type"],
+        },
+        defaultAuthorizer: authorizer,
       },
-      defaultAuthorizer: authorizer,
-    });
+    );
 
-    const registerIntegration = new HttpLambdaIntegration('RegisterIntegration', props.registerFn);
-    const productsIntegration = new HttpLambdaIntegration('ProductsIntegration', props.productsFn);
-    const ordersIntegration = new HttpLambdaIntegration('OrdersIntegration', props.ordersFn);
-    const imagesIntegration = new HttpLambdaIntegration('ImagesIntegration', props.imagesFn);
+    const businessSetupIntegration = new HttpLambdaIntegration(
+      "BusinessSetupIntegration",
+      props.businessSetupFn,
+    );
+    const productsIntegration = new HttpLambdaIntegration(
+      "ProductsIntegration",
+      props.productsFn,
+    );
+    const ordersIntegration = new HttpLambdaIntegration(
+      "OrdersIntegration",
+      props.ordersFn,
+    );
+    const imagesIntegration = new HttpLambdaIntegration(
+      "ImagesIntegration",
+      props.imagesFn,
+    );
 
     httpApi.addRoutes({
-      path: '/register',
+      path: "/business/setup",
       methods: [apigwv2.HttpMethod.POST],
-      integration: registerIntegration,
+      integration: businessSetupIntegration,
     });
 
     httpApi.addRoutes({
-      path: '/products',
+      path: "/products",
       methods: [apigwv2.HttpMethod.POST],
       integration: productsIntegration,
     });
     httpApi.addRoutes({
-      path: '/products/{ownerId}',
+      path: "/products/{ownerId}",
       methods: [apigwv2.HttpMethod.GET],
       integration: productsIntegration,
     });
 
     httpApi.addRoutes({
-      path: '/orders',
+      path: "/orders",
       methods: [apigwv2.HttpMethod.POST],
       integration: ordersIntegration,
     });
     httpApi.addRoutes({
-      path: '/orders/{ownerId}',
+      path: "/orders/{ownerId}",
       methods: [apigwv2.HttpMethod.GET],
       integration: ordersIntegration,
     });
     httpApi.addRoutes({
-      path: '/orders/{ownerId}/{orderId}/status',
+      path: "/orders/{ownerId}/{orderId}/status",
       methods: [apigwv2.HttpMethod.PATCH],
       integration: ordersIntegration,
     });
 
     httpApi.addRoutes({
-      path: '/images/presign',
+      path: "/images/presign",
       methods: [apigwv2.HttpMethod.POST],
       integration: imagesIntegration,
     });
 
-    new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
+    new CfnOutput(this, "ApiUrl", { value: httpApi.apiEndpoint });
   }
 }

@@ -4,6 +4,7 @@ import { AuthStack } from '../lib/auth-stack';
 import { DataStack } from '../lib/data-stack';
 import { LambdaStack } from '../lib/lambda-stack';
 import { ApiStack } from '../lib/api-stack';
+import { APP_NAME } from '../constant';
 
 const app = new cdk.App();
 
@@ -20,10 +21,10 @@ if (!env.account) {
   );
 }
 
-const auth = new AuthStack(app, `enterprise-app-auth-${stage}`, { env, stage });
-const data = new DataStack(app, `enterprise-app-data-${stage}`, { env, stage });
+const auth = new AuthStack(app, `${APP_NAME}-auth-${stage}`, { env, stage });
+const data = new DataStack(app, `${APP_NAME}-data-${stage}`, { env, stage });
 
-const functions = new LambdaStack(app, `enterprise-app-lambda-${stage}`, {
+const functions = new LambdaStack(app, `${APP_NAME}-lambda-${stage}`, {
   env,
   stage,
   businessTable: data.businessTable,
@@ -32,12 +33,12 @@ const functions = new LambdaStack(app, `enterprise-app-lambda-${stage}`, {
   productsBucket: data.productsBucket,
 });
 
-new ApiStack(app, `enterprise-app-api-${stage}`, {
+new ApiStack(app, `${APP_NAME}-api-${stage}`, {
   env,
   stage,
   userPool: auth.userPool,
   userPoolClient: auth.userPoolClient,
-  registerFn: functions.registerFn,
+  businessSetupFn: functions.businessSetup,
   productsFn: functions.productsFn,
   ordersFn: functions.ordersFn,
   imagesFn: functions.imagesFn,
