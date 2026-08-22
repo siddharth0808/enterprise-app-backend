@@ -26,7 +26,9 @@ export class AuthStack extends Stack {
         signInAliases: { email: true },
         autoVerify: { email: true }, // enable SNS/SES verification later if desired
         standardAttributes: {
+          phoneNumber: { required: true, mutable: false },
           email: { required: true, mutable: false },
+          fullname: { required: true, mutable: true },
         },
         customAttributes: {
           role: new cognito.StringAttribute({ mutable: false }),
@@ -39,7 +41,7 @@ export class AuthStack extends Stack {
           requireSymbols: false,
         },
         accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-        removalPolicy: cdk.RemovalPolicy.RETAIN,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
         selfSignUpEnabled: true,
       },
     );
