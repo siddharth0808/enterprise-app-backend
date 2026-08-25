@@ -15,6 +15,7 @@ const handlers = {
   orders: path.join(__dirname, 'orders', 'handler.ts'),
   images: path.join(__dirname, 'images', 'handler.ts'),
   transactions: path.join(__dirname, 'transactions', 'handler.ts'),
+  invoices: path.join(__dirname, 'invoices', 'handler.ts'),
 };
 
 for (const [name, entryPoint] of Object.entries(handlers)) {
