@@ -6,6 +6,7 @@ import {
   GetCommand,
   PutCommand,
   QueryCommand,
+  TransactWriteCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { json, getClaims } from "../shared/http";
@@ -67,23 +68,30 @@ export const handler = async (
     };
 
     await ddb.send(
-      new PutCommand({ TableName: TRANSACTIONS_TABLE, Item: item }),
-    );
-    await ddb.send(
-      new UpdateCommand({
-        TableName: PRODUCTS_TABLE,
-        Key: {
-          businessId,
-          id: productId,
-        },
-        UpdateExpression: "SET currentStock =:currentStock, updatedAt=:updatedAt",
-        ExpressionAttributeValues: {
-          ":currentStock": newStock,
-          ":updatedAt": new Date().toISOString()
-        },
-        ReturnValues: "ALL_NEW",
+      new TransactWriteCommand({
+        TransactItems: [
+          {
+            Update: {
+              TableName: PRODUCTS_TABLE,
+              Key: {
+                businessId,
+                id: productId,
+              },
+              UpdateExpression:
+                "SET currentStock =:currentStock, updatedAt=:updatedAt",
+              ExpressionAttributeValues: {
+                ":currentStock": newStock,
+                ":updatedAt": new Date().toISOString(),
+              },
+            },
+          },
+          {
+            Put:{ TableName: TRANSACTIONS_TABLE, Item: item }
+          }
+        ],
       }),
     );
+
     return json(201, item);
   }
 
