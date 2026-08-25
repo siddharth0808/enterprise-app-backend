@@ -8,6 +8,18 @@ export function json(statusCode: number, body: unknown): APIGatewayProxyResultV2
   };
 }
 
+export function response(statusCode: number, body: unknown) {
+  return {
+    statusCode,
+
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify(body),
+  };
+}
+
 // API Gateway's JWT authorizer already verified the signature/expiry before this
 // code ever runs — this just reads the claims it attached to the request.
 export function getClaims(event: APIGatewayProxyEventV2WithJWTAuthorizer) {

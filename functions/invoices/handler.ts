@@ -1,10 +1,32 @@
-import { APIGatewayProxyEventV2WithJWTAuthorizer } from "aws-lambda";
-import { json } from "../shared/http";
+import {
+  APIGatewayProxyEventV2WithJWTAuthorizer,
+} from "aws-lambda";
+import { getClaims, json, response } from "../shared/http";
+import { UploadInvoiceService } from "./uploadInvoiceService";
 
 export const handler = async (
   event: APIGatewayProxyEventV2WithJWTAuthorizer,
 ) => {
-  const method = event.requestContext.http.method;
-  console.log("event:", JSON.stringify(event));
-  return json(200, { message: "invoices lambda working!" });
+  try {
+    const { sub } = getClaims(event);
+    const body = event.body ? JSON.parse(event.body) : null;
+
+    if (!body) {
+      return json(400, {
+        message: "Request body is required",
+      });
+    }
+    const service =  new UploadInvoiceService();
+    const response =  await service.uploadInvoice(body, sub)
+
+    return json(201,response);
+  } catch (error) {
+    console.error("Create invoice failed", error);
+
+    return response(500, {
+      message: "Failed to create invoice",
+    });
+  }
 };
+
+
