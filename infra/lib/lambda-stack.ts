@@ -112,11 +112,12 @@ export class LambdaStack extends Stack {
         handler: "index.handler",
         environment: {
           INVOICES_TABLE: props.invoicesTable.tableName,
+          BUSINESS_TABLE: props.businessTable.tableName,
         },
       },
     );
-    // props.productsTable.grantReadWriteData(this.invoicesFn);
+    props.businessTable.grantReadWriteData(this.invoicesFn);
     props.invoicesTable.grantReadWriteData(this.invoicesFn);
-    props.inventoryFlowBucket.grantPut(this.invoicesFn)
+    props.inventoryFlowBucket.grantPut(this.invoicesFn);
   }
 }
