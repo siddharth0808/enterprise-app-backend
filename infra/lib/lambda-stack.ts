@@ -119,5 +119,6 @@ export class LambdaStack extends Stack {
     props.businessTable.grantReadWriteData(this.invoicesFn);
     props.invoicesTable.grantReadWriteData(this.invoicesFn);
     props.inventoryFlowBucket.grantPut(this.invoicesFn);
+    props.inventoryFlowBucket.grantRead(this.invoicesFn)
   }
 }

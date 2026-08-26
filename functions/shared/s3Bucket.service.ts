@@ -1,4 +1,8 @@
-import { HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3 = new S3Client({});
@@ -21,26 +25,53 @@ export class S3Service {
         expiresIn: 900,
       });
       return uploadUrl;
-    } catch (error:any) {
-        throw Error(error.message)
+    } catch (error: any) {
+      throw Error(error.message);
     }
   }
 
-  public async isObjectAvailable(Bucket:string,Key: string): Promise<boolean> {
-  try {
-    await s3.send(
-      new HeadObjectCommand({
-        Bucket,
+  public async isObjectAvailable(
+    Bucket: string,
+    Key: string,
+  ): Promise<boolean> {
+    try {
+      const response = await s3.send(
+        new HeadObjectCommand({
+          Bucket,
+          Key,
+        }),
+      );
+
+      console.log("S3 object exists", {
         Key,
-      })
-    );
-    return true;
-  } catch (error: any) {
-    if (error.name === "NotFound" || error.$metadata?.httpStatusCode === 404) {
-      return false;
+        statusCode: response.$metadata.httpStatusCode,
+        contentLength: response.ContentLength,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error("S3 HeadObject failed", {
+        name: error?.name,
+        message: error?.message,
+        code: error?.code,
+        statusCode: error?.$metadata?.httpStatusCode,
+        requestId: error?.$metadata?.requestId,
+        extendedRequestId: error?.$metadata?.extendedRequestId,
+        cfId: error?.$metadata?.cfId,
+        bucket: process.env.BUCKET_NAME,
+        Key,
+      });
+
+      if (
+        error?.$metadata?.httpStatusCode === 404 ||
+        error?.name === "NotFound" ||
+        error?.name === "NoSuchKey"
+      ) {
+        return false;
+      }
+
+      throw error;
     }
-    throw error; // Permission/network/etc. error
   }
-}
 }
 export const s3Service = new S3Service();

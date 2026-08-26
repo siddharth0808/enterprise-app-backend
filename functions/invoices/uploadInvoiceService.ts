@@ -116,12 +116,11 @@ export class UploadInvoiceService {
         BUSINESS_TABLE,
         sub,
       );
-      const businessId = business.Item ? business.Item.id : "";
-      if (!businessId) throw Error("Matching business not found!");
+      if (!business) throw Error("Matching business not found!");
 
       const invoice = await dynamoDBService.getItem(INVOICES_TABLE, {
         id: invoiceId,
-        businessId,
+        businessId:business.id,
       });
 
       if (!Object.keys(invoice).length)
@@ -137,8 +136,8 @@ export class UploadInvoiceService {
       await this.ddbService.updateItems(
         INVOICES_TABLE,
         {
-          id: invoiceId,
-          businessId,
+          id: invoice.id,
+          businessId:invoice.businessId,
         },
         `SET status=:status, updatedAt=:updatedAt`,
         {

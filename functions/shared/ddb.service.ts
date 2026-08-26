@@ -21,6 +21,8 @@ export class DynamoDBService {
           },
         }),
       );
+            console.log("getBusinessByOwnerId::::::", JSON.stringify(business))
+
       return business.Item ? business.Item : {};
     } catch (error: any) {
       throw Error(error.message);
@@ -52,6 +54,7 @@ export class DynamoDBService {
           Key,
         }),
       );
+      console.log("getItem::::::", JSON.stringify(resposne))
       return resposne.Item ? resposne.Item : {};
     } catch (error: any) {
       throw Error(error.message);
