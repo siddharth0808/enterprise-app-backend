@@ -65,15 +65,18 @@ export class DynamoDBService {
     tableName: string,
     Key: any,
     UpdateExpression: string,
+    ExpressionAttributeNames:any,
     ExpressionAttributeValues: any,
   ) {
     try {
-      await new UpdateCommand({
+        const command  = {
         TableName: tableName,
         Key,
         UpdateExpression,
+        ExpressionAttributeNames,
         ExpressionAttributeValues,
-      });
+      }
+      await ddb.send(new UpdateCommand(command));
     } catch (error: any) {
       throw Error(error.message);
     }
