@@ -136,12 +136,14 @@ export class LambdaStack extends Stack {
         environment: {
           INVOICES_TABLE: props.invoicesTable.tableName,
           INVOICE_BUCKET: props.inventoryFlowBucket.bucketName,
-          INVOICES_FUNCTION_NAME: this.invoicesFn.functionName
         },
       },
     );
     props.invoicesTable.grantReadWriteData(this.invoicesProcesserFn);
     props.inventoryFlowBucket.grantRead(this.invoicesProcesserFn);
-    this.invoicesProcesserFn.grantInvoke(this.invoicesFn)
+
+
+    this.invoicesFn.grantInvoke(this.invoicesProcesserFn);
+    this.invoicesFn.addEnvironment('INVOICES_PROCESSER_FUNCTION_NAME', this.invoicesProcesserFn.functionName)
   }
 }
