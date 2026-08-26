@@ -104,27 +104,7 @@ export class LambdaStack extends Stack {
     props.productsTable.grantReadWriteData(this.transactionsFn);
     props.transactionsTable.grantReadWriteData(this.transactionsFn);
 
-    this.invoicesFn = new lambda.Function(
-      this,
-      `${APP_NAME}-invoicesFn-${props.stage}`,
-      {
-        ...commonProps,
-        functionName: `${APP_NAME}-invoicesFn-${props.stage}`,
-        code: lambda.Code.fromAsset("../functions/dist/invoices"),
-        handler: "index.handler",
-        environment: {
-          INVOICES_TABLE: props.invoicesTable.tableName,
-          BUSINESS_TABLE: props.businessTable.tableName,
-          INVOICE_BUCKET: props.inventoryFlowBucket.bucketName
-        },
-      },
-    );
-    props.businessTable.grantReadWriteData(this.invoicesFn);
-    props.invoicesTable.grantReadWriteData(this.invoicesFn);
-    props.inventoryFlowBucket.grantPut(this.invoicesFn);
-    props.inventoryFlowBucket.grantRead(this.invoicesFn);
-
-    this.invoicesProcesserFn = new lambda.Function(
+        this.invoicesProcesserFn = new lambda.Function(
       this,
       `${APP_NAME}-invoicesProcesserFn-${props.stage}`,
       {
@@ -142,8 +122,27 @@ export class LambdaStack extends Stack {
     props.invoicesTable.grantReadWriteData(this.invoicesProcesserFn);
     props.inventoryFlowBucket.grantRead(this.invoicesProcesserFn);
 
+    this.invoicesFn = new lambda.Function(
+      this,
+      `${APP_NAME}-invoicesFn-${props.stage}`,
+      {
+        ...commonProps,
+        functionName: `${APP_NAME}-invoicesFn-${props.stage}`,
+        code: lambda.Code.fromAsset("../functions/dist/invoices"),
+        handler: "index.handler",
+        environment: {
+          INVOICES_TABLE: props.invoicesTable.tableName,
+          BUSINESS_TABLE: props.businessTable.tableName,
+          INVOICE_BUCKET: props.inventoryFlowBucket.bucketName,
+          INVOICES_PROCESSER_FUNCTION_NAME: this.invoicesProcesserFn.functionName
+        },
+      },
+    );
+    props.businessTable.grantReadWriteData(this.invoicesFn);
+    props.invoicesTable.grantReadWriteData(this.invoicesFn);
+    props.inventoryFlowBucket.grantPut(this.invoicesFn);
+    props.inventoryFlowBucket.grantRead(this.invoicesFn);
 
-    this.invoicesFn.grantInvoke(this.invoicesProcesserFn);
-    this.invoicesFn.addEnvironment('INVOICES_PROCESSER_FUNCTION_NAME', this.invoicesProcesserFn.functionName)
+    this.invoicesProcesserFn.grantInvoke(this.invoicesFn);
   }
 }
