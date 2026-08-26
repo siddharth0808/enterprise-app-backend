@@ -8,7 +8,7 @@ import { lambdaService } from "../shared/lambda.service";
 const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
 const INVOICES_TABLE = process.env.INVOICES_TABLE!;
 const INVOICE_BUCKET = process.env.INVOICE_BUCKET!;
-const INVOICES_FUNCTION_NAME = process.env.INVOICES_FUNCTION_NAME!;
+const INVOICES_PROCESSER_FUNCTION_NAME = process.env.INVOICES_PROCESSER_FUNCTION_NAME!;
 
 
 const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
@@ -158,7 +158,7 @@ export class UploadInvoiceService {
          invoiceId,
       }
 
-      await this.lambda.invokeAsync(INVOICES_FUNCTION_NAME, lambdaEvent)
+      await this.lambda.invokeAsync(INVOICES_PROCESSER_FUNCTION_NAME, lambdaEvent)
 
       return { invoiceId, status: 'PROCESSING' };
     } catch (error: any) {

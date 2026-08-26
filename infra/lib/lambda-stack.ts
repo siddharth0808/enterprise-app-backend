@@ -25,7 +25,6 @@ export class LambdaStack extends Stack {
   public readonly invoicesFn: lambda.Function;
   public readonly invoicesProcesserFn: lambda.Function;
 
-
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
@@ -104,7 +103,7 @@ export class LambdaStack extends Stack {
     props.productsTable.grantReadWriteData(this.transactionsFn);
     props.transactionsTable.grantReadWriteData(this.transactionsFn);
 
-        this.invoicesProcesserFn = new lambda.Function(
+    this.invoicesProcesserFn = new lambda.Function(
       this,
       `${APP_NAME}-invoicesProcesserFn-${props.stage}`,
       {
@@ -134,7 +133,8 @@ export class LambdaStack extends Stack {
           INVOICES_TABLE: props.invoicesTable.tableName,
           BUSINESS_TABLE: props.businessTable.tableName,
           INVOICE_BUCKET: props.inventoryFlowBucket.bucketName,
-          INVOICES_PROCESSER_FUNCTION_NAME: this.invoicesProcesserFn.functionName
+          INVOICES_PROCESSER_FUNCTION_NAME:
+            this.invoicesProcesserFn.functionName,
         },
       },
     );

@@ -1,5 +1,5 @@
 
-name: AI Interview Coach Backend Deploy QA
+name: Inventory Flow Backend Deploy QA
 
 on:
   push:
