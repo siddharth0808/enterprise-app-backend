@@ -3,6 +3,8 @@ import { Construct } from "constructs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import * as iam from "aws-cdk-lib/aws-iam";
+
 import { APP_NAME } from "../constant";
 
 export interface LambdaStackProps extends StackProps {
@@ -55,7 +57,10 @@ export class LambdaStack extends Stack {
         functionName: `${APP_NAME}-productsFn-${props.stage}`,
         code: lambda.Code.fromAsset("../functions/dist/products"),
         handler: "index.handler",
-        environment: { PRODUCTS_TABLE: props.productsTable.tableName, BUSINESS_TABLE: props.businessTable.tableName },
+        environment: {
+          PRODUCTS_TABLE: props.productsTable.tableName,
+          BUSINESS_TABLE: props.businessTable.tableName,
+        },
       },
     );
     props.productsTable.grantReadWriteData(this.productsFn);
@@ -121,6 +126,13 @@ export class LambdaStack extends Stack {
     );
     props.invoicesTable.grantReadWriteData(this.invoicesProcesserFn);
     props.inventoryFlowBucket.grantRead(this.invoicesProcesserFn);
+    this.invoicesProcesserFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ["textract:AnalyzeExpense"],
+        resources: ["*"],
+      }),
+    );
 
     this.invoicesFn = new lambda.Function(
       this,
