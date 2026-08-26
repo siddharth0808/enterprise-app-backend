@@ -1,17 +1,10 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import {
-  DynamoDBDocumentClient,
-  GetCommand,
-  PutCommand,
-} from "@aws-sdk/lib-dynamodb";
 import { getExtension } from "../shared/utils";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { dynamoDBService } from "../shared/ddb.service";
+import { s3Service } from "../shared/s3Bucket.service";
 
-const s3 = new S3Client({});
-const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
-
 const INVOICES_TABLE = process.env.INVOICES_TABLE!;
 const INVOICE_BUCKET = process.env.INVOICE_BUCKET!;
 
@@ -24,7 +17,10 @@ interface CreateInvoiceRequest {
   fileSize?: number;
 }
 export class UploadInvoiceService {
-  constructor() {}
+  constructor(
+    public readonly ddbService = dynamoDBService,
+    public readonly s3 = s3Service,
+  ) {}
 
   async validatedUploadInvoiceReq(
     sub: string,
@@ -56,17 +52,13 @@ export class UploadInvoiceService {
     try {
       const { fileName, contentType, fileSize }: CreateInvoiceRequest = body;
 
-      const business = await ddb.send(
-        new GetCommand({
-          TableName: BUSINESS_TABLE,
-          Key: {
-            ownerId: sub,
-          },
-        }),
+      const business = await this.ddbService.getBusinessByOwnerId(
+        BUSINESS_TABLE,
+        sub,
       );
 
-      console.log("Business respons::::", JSON.stringify(business))
-      const businessId = business.Item?.length ? business.Item[0].id : "";
+      console.log("Business respons::::", JSON.stringify(business));
+      const businessId = business.Item ? business.Item.id : "";
 
       await this.validatedUploadInvoiceReq(
         sub,
@@ -80,7 +72,7 @@ export class UploadInvoiceService {
 
       const extension = getExtension(fileName, contentType);
 
-      const documentKey = `${sub}/invoices/${businessId}/${invoiceId}/invoice.${extension}`;
+      const documentKey = `${sub}/${businessId}/invoices/${invoiceId}/invoice.${extension}`;
 
       const now = new Date().toISOString();
 
@@ -99,25 +91,13 @@ export class UploadInvoiceService {
         updatedAt: now,
       };
 
-      await ddb.send(
-        new PutCommand({
-          TableName: INVOICES_TABLE,
-
-          Item: invoice,
-
-          ConditionExpression: "attribute_not_exists(id)",
-        }),
+      await this.ddbService.putItems(INVOICES_TABLE, invoice);
+      const uploadUrl = await this.s3.getUploadPresignedUrl(
+        INVOICE_BUCKET,
+        documentKey,
+        contentType,
       );
 
-      const command = new PutObjectCommand({
-        Bucket: INVOICE_BUCKET,
-        Key: documentKey,
-        ContentType: contentType,
-      });
-
-      const uploadUrl = await getSignedUrl(s3, command, {
-        expiresIn: 900,
-      });
       return {
         invoiceId,
         status: invoice.status,
@@ -126,6 +106,50 @@ export class UploadInvoiceService {
       };
     } catch (error: any) {
       console.log("uploadInvoice error::::", error.stack);
+      throw Error(error.message);
+    }
+  }
+
+  public async updateInvoiceStatus(sub: string, invoiceId: string) {
+    try {
+      const business = await this.ddbService.getBusinessByOwnerId(
+        BUSINESS_TABLE,
+        sub,
+      );
+      const businessId = business.Item ? business.Item.id : "";
+      if (!businessId) throw Error("Matching business not found!");
+
+      const invoice = await dynamoDBService.getItem(INVOICES_TABLE, {
+        id: invoiceId,
+        businessId,
+      });
+
+      if (!Object.keys(invoice).length)
+        throw Error("Matching invoice not found!");
+
+      const exists = await this.s3.isObjectAvailable(
+        INVOICE_BUCKET,
+        invoice.documentKey,
+      );
+
+      if (!exists) throw Error("Object does not exist");
+
+      await this.ddbService.updateItems(
+        INVOICES_TABLE,
+        {
+          id: invoiceId,
+          businessId,
+        },
+        `SET status=:status, updatedAt=:updatedAt`,
+        {
+          ":status": "UPLOADED",
+          ":updatedAt": new Date().toISOString(),
+        },
+      );
+
+      return { message: "Invoice status updated" };
+    } catch (error: any) {
+      console.log("updateInvoiceUploadStatus error::::", error.stack);
       throw Error(error.message);
     }
   }

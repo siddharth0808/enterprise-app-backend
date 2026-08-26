@@ -15,7 +15,7 @@ export const handler = async (event: APIGatewayProxyEventV2WithJWTAuthorizer) =>
   const routeKey = event.requestContext.routeKey ?? '';
 
   if (method === 'POST') {
-    const { sub, phoneNumber } = getClaims(event);
+    const { sub } = getClaims(event);
     const body = JSON.parse(event.body ?? '{}');
 
     if (!body.ownerId || !body.orders?.length) {
@@ -30,7 +30,7 @@ export const handler = async (event: APIGatewayProxyEventV2WithJWTAuthorizer) =>
     const order: Order = {
       ownerId: body.ownerId,
       orderId: randomUUID(),
-      customerPhone: phoneNumber ?? sub,
+      customerPhone:  sub,
       customerName: body.customerName ?? '',
       total,
       payMode: body.payMode ?? 'COD',
