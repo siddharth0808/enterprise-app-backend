@@ -23,6 +23,8 @@ export class LambdaStack extends Stack {
   public readonly imagesFn: lambda.Function;
   public readonly transactionsFn: lambda.Function;
   public readonly invoicesFn: lambda.Function;
+  public readonly invoicesProcesserFn: lambda.Function;
+
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -113,12 +115,33 @@ export class LambdaStack extends Stack {
         environment: {
           INVOICES_TABLE: props.invoicesTable.tableName,
           BUSINESS_TABLE: props.businessTable.tableName,
+          INVOICE_BUCKET: props.inventoryFlowBucket.bucketName
         },
       },
     );
     props.businessTable.grantReadWriteData(this.invoicesFn);
     props.invoicesTable.grantReadWriteData(this.invoicesFn);
     props.inventoryFlowBucket.grantPut(this.invoicesFn);
-    props.inventoryFlowBucket.grantRead(this.invoicesFn)
+    props.inventoryFlowBucket.grantRead(this.invoicesFn);
+
+    this.invoicesProcesserFn = new lambda.Function(
+      this,
+      `${APP_NAME}-invoicesProcesserFn-${props.stage}`,
+      {
+        ...commonProps,
+        functionName: `${APP_NAME}-invoicesProcesserFn-${props.stage}`,
+        code: lambda.Code.fromAsset("../functions/dist/invoicesProcesser"),
+        handler: "index.handler",
+        timeout: Duration.minutes(15),
+        environment: {
+          INVOICES_TABLE: props.invoicesTable.tableName,
+          INVOICE_BUCKET: props.inventoryFlowBucket.bucketName,
+          INVOICES_FUNCTION_NAME: this.invoicesFn.functionName
+        },
+      },
+    );
+    props.invoicesTable.grantReadWriteData(this.invoicesProcesserFn);
+    props.inventoryFlowBucket.grantRead(this.invoicesProcesserFn);
+    this.invoicesProcesserFn.grantInvoke(this.invoicesFn)
   }
 }

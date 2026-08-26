@@ -3,10 +3,13 @@ import { getExtension } from "../shared/utils";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { dynamoDBService } from "../shared/ddb.service";
 import { s3Service } from "../shared/s3Bucket.service";
+import { lambdaService } from "../shared/lambda.service";
 
 const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
 const INVOICES_TABLE = process.env.INVOICES_TABLE!;
 const INVOICE_BUCKET = process.env.INVOICE_BUCKET!;
+const INVOICES_FUNCTION_NAME = process.env.INVOICES_FUNCTION_NAME!;
+
 
 const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 
@@ -20,6 +23,7 @@ export class UploadInvoiceService {
   constructor(
     public readonly ddbService = dynamoDBService,
     public readonly s3 = s3Service,
+    public readonly lambda = lambdaService
   ) {}
 
   async validatedUploadInvoiceReq(
@@ -149,7 +153,14 @@ export class UploadInvoiceService {
         },
       );
 
-      return { message: "Invoice status updated" };
+      const lambdaEvent = {
+        businessId: business.id,
+         invoiceId,
+      }
+
+      await this.lambda.invokeAsync(INVOICES_FUNCTION_NAME, lambdaEvent)
+
+      return { invoiceId, status: 'PROCESSING' };
     } catch (error: any) {
       console.log("updateInvoiceUploadStatus error::::", error.stack);
       throw Error(error.message);
