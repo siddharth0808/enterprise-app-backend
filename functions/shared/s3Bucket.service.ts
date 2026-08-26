@@ -1,4 +1,5 @@
 import {
+  GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -71,6 +72,24 @@ export class S3Service {
       }
 
       throw error;
+    }
+  }
+
+  public async getObject(Bucket: string, Key: string) {
+    try {
+      const response = await s3.send(
+        new GetObjectCommand({
+          Bucket,
+          Key,
+        }),
+      );
+      if (!response.Body) {
+        throw new Error("S3 object body is empty.");
+      }
+
+      return Buffer.from(await response.Body.transformToByteArray());
+    } catch (error: any) {
+      throw Error(error.message);
     }
   }
 }

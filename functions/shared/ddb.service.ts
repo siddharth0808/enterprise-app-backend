@@ -1,4 +1,4 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   GetCommand,
@@ -77,6 +77,26 @@ export class DynamoDBService {
         ExpressionAttributeValues,
       }
       await ddb.send(new UpdateCommand(command));
+    } catch (error: any) {
+      throw Error(error.message);
+    }
+  }
+
+    public async getAllItems(
+    tableName: string,
+    KeyConditionExpression:any,
+    ExpressionAttributeValues:any
+  ) {
+    try {
+      const resposne = await ddb.send(
+        new QueryCommand({
+          TableName: tableName,
+          KeyConditionExpression,
+          ExpressionAttributeValues
+        }),
+      );
+      console.log("getAllItems::::::", JSON.stringify(resposne))
+      return resposne.Items ? resposne.Items : [];
     } catch (error: any) {
       throw Error(error.message);
     }

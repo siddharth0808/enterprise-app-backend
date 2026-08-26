@@ -55,10 +55,11 @@ export class LambdaStack extends Stack {
         functionName: `${APP_NAME}-productsFn-${props.stage}`,
         code: lambda.Code.fromAsset("../functions/dist/products"),
         handler: "index.handler",
-        environment: { PRODUCTS_TABLE: props.productsTable.tableName },
+        environment: { PRODUCTS_TABLE: props.productsTable.tableName, BUSINESS_TABLE: props.businessTable.tableName },
       },
     );
     props.productsTable.grantReadWriteData(this.productsFn);
+    props.businessTable.grantReadWriteData(this.productsFn);
 
     this.ordersFn = new lambda.Function(
       this,
