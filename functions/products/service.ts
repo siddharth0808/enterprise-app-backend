@@ -19,7 +19,7 @@ export class ProductService {
       if (!business) throw Error("Business not found!");
       const products = await this.ddbService.getAllItems(
         PRODUCTS_TABLE,
-        "businessId = :businessId",
+        `businessId = :businessId`,
         { ":businessId": business.id },
       );
       return products;

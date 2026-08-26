@@ -1,9 +1,10 @@
-import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient  } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
   UpdateCommand,
+  QueryCommand
 } from "@aws-sdk/lib-dynamodb";
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -21,7 +22,7 @@ export class DynamoDBService {
           },
         }),
       );
-            console.log("getBusinessByOwnerId::::::", JSON.stringify(business))
+      console.log("getBusinessByOwnerId::::::", JSON.stringify(business));
 
       return business.Item ? business.Item : {};
     } catch (error: any) {
@@ -43,10 +44,7 @@ export class DynamoDBService {
     }
   }
 
-  public async getItem(
-    tableName: string,
-    Key:any
-  ) {
+  public async getItem(tableName: string, Key: any) {
     try {
       const resposne = await ddb.send(
         new GetCommand({
@@ -54,7 +52,7 @@ export class DynamoDBService {
           Key,
         }),
       );
-      console.log("getItem::::::", JSON.stringify(resposne))
+      console.log("getItem::::::", JSON.stringify(resposne));
       return resposne.Item ? resposne.Item : {};
     } catch (error: any) {
       throw Error(error.message);
@@ -65,37 +63,37 @@ export class DynamoDBService {
     tableName: string,
     Key: any,
     UpdateExpression: string,
-    ExpressionAttributeNames:any,
+    ExpressionAttributeNames: any,
     ExpressionAttributeValues: any,
   ) {
     try {
-        const command  = {
+      const command = {
         TableName: tableName,
         Key,
         UpdateExpression,
         ExpressionAttributeNames,
         ExpressionAttributeValues,
-      }
+      };
       await ddb.send(new UpdateCommand(command));
     } catch (error: any) {
       throw Error(error.message);
     }
   }
 
-    public async getAllItems(
+  public async getAllItems(
     tableName: string,
-    KeyConditionExpression:any,
-    ExpressionAttributeValues:any
+    KeyConditionExpression: any,
+    ExpressionAttributeValues: any,
   ) {
     try {
-      const resposne = await ddb.send(
-        new QueryCommand({
-          TableName: tableName,
-          KeyConditionExpression,
-          ExpressionAttributeValues
-        }),
-      );
-      console.log("getAllItems::::::", JSON.stringify(resposne))
+      const command = {
+        TableName: tableName,
+        KeyConditionExpression,
+        ExpressionAttributeValues,
+      };
+      console.log("getAllItems command::::", JSON.stringify(command));
+      const resposne = await ddb.send(new QueryCommand(command));
+      console.log("getAllItems::::::", JSON.stringify(resposne));
       return resposne.Items ? resposne.Items : [];
     } catch (error: any) {
       throw Error(error.message);
