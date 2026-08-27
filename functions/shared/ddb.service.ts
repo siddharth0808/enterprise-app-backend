@@ -105,13 +105,15 @@ export class DynamoDBService {
     tableName: string,
     IndexName:string,
     KeyConditionExpression: any,
-    ExpressionAttributeValues: any,
+    ExpressionAttributeNames:any,
+    ExpressionAttributeValues: any, 
   ) {
     try {
       const command = {
         TableName: tableName,
         IndexName,
         KeyConditionExpression,
+        ExpressionAttributeNames,
         ExpressionAttributeValues,
       };
       console.log("getItemsByIndex command::::", JSON.stringify(command));

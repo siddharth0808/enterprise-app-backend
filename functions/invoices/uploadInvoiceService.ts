@@ -4,8 +4,12 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { dynamoDBService } from "../shared/ddb.service";
 import { s3Service } from "../shared/s3Bucket.service";
 import { lambdaService } from "../shared/lambda.service";
-import { ExtractedInvoiceItem } from "../invoicesProcesser/types";
+import {
+  ExtractedInvoice,
+  ExtractedInvoiceItem,
+} from "../invoicesProcesser/types";
 import { QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { randomUUID } from "crypto";
 
 const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
 const INVOICES_TABLE = process.env.INVOICES_TABLE!;
@@ -220,16 +224,13 @@ export class UploadInvoiceService {
       let invoiceProducts: ExtractedInvoiceItem[] = [];
 
       try {
-        invoiceProducts = invoice?.products
-        ? JSON.parse(invoice.products)
-        : [];
-      } catch (error:any) {
+        invoiceProducts = invoice?.products ? JSON.parse(invoice.products) : [];
+      } catch (error: any) {
         console.log("Error while pars json:::", error.stack);
-        throw Error("Error while pars json")
-      }  
-      console.log("invoiceProducts:::::", JSON.stringify(invoiceProducts))
-      
-      
+        throw Error("Error while pars json");
+      }
+      console.log("invoiceProducts:::::", JSON.stringify(invoiceProducts));
+
       const productNames = invoiceProducts.map(
         (product: ExtractedInvoiceItem) => product.productName,
       );
@@ -239,7 +240,10 @@ export class UploadInvoiceService {
           this.ddbService.getItemsByIndex(
             PRODUCTS_TABLE,
             "byProductName",
-            "businessId = :businessId AND normalizedName = :name",
+            "businessId = :businessId AND #name = :name",
+            {
+              "#name": "name",
+            },
             {
               ":businessId": business.id,
               ":name": name,
@@ -247,17 +251,35 @@ export class UploadInvoiceService {
           ),
         ),
       );
-      console.log("existingProducts:::::", JSON.stringify(existingProducts))
-      if(!existingProducts.length){
-        const newProducts =  invoiceProducts.map((product:any)=>{
-          return{
+      console.log("existingProducts:::::", JSON.stringify(existingProducts));
+
+      let flatedExisitngProducts: any = [];
+      existingProducts.forEach((item: any) => {
+        flatedExisitngProducts = [...flatedExisitngProducts, ...item];
+      });
+      console.log(
+        "flatedExisitngProducts:::::",
+        JSON.stringify(flatedExisitngProducts),
+      );
+
+      if (!flatedExisitngProducts.length) {
+        const newProducts = invoiceProducts.map((product: any) => {
+          return {
             ...product,
-            stock:'NEW'
-          }
-        })
-        return newProducts
+            id: randomUUID(),
+            status: "NEW",
+            currentQuantity:0
+          };
+        });
+        return {
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceDate: invoice.invoiceDate,
+          products: newProducts,
+          supplier: invoice.supplier,
+          total: invoice.total,
+        } as ExtractedInvoice;
       }
-      return [];
+      return {};
     } catch (error: any) {
       console.log("getInvoiceStatus error::::", error.stack);
       throw Error(error.message);

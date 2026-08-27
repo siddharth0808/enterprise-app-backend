@@ -25,6 +25,7 @@ export interface ExtractedInvoiceItem {
   cgst?: number;
 
   amount?: number;
+  stock?:string
 }
 
 export interface ExtractedInvoiceTotals {
