@@ -4,12 +4,13 @@ export const extractedInvoiceSupplierSchema = z.object({
   name: z.string().trim().min(1).optional(),
   address: z.string().trim().min(1).optional(),
   gstin: z.string().trim().min(1).optional(),
+  contact: z.string().trim().min(1).optional(),
+
 });
 
 export const extractedInvoiceItemSchema = z.object({
   productName: z.string().trim().min(1),
 
-  packing: z.string().trim().min(1).optional(),
   manufacturer: z.string().trim().min(1).optional(),
 
   batchNumber: z.string().trim().min(1).optional(),
@@ -23,8 +24,8 @@ export const extractedInvoiceItemSchema = z.object({
   rate: z.number().nonnegative().optional(),
   discount: z.number().nonnegative().optional(),
 
-  gstPercent: z.number().min(0).max(100).optional(),
-  gstAmount: z.number().nonnegative().optional(),
+  sgst: z.number().min(0).max(100).optional(),
+  cgst: z.number().nonnegative().optional(),
 
   amount: z.number().nonnegative().optional(),
 });
@@ -43,9 +44,9 @@ export const extractedInvoiceSchema = z.object({
 
   supplier: extractedInvoiceSupplierSchema.optional(),
 
-  items: z.array(extractedInvoiceItemSchema).min(1),
+  products: z.array(extractedInvoiceItemSchema).min(1),
 
-  totals: extractedInvoiceTotalsSchema.optional(),
+  total:z.number().nonnegative().optional(),
 });
 
 export type ExtractedInvoice = z.infer<

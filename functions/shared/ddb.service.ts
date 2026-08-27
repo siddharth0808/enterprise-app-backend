@@ -74,6 +74,7 @@ export class DynamoDBService {
         ExpressionAttributeNames,
         ExpressionAttributeValues,
       };
+      console.log("updateItems command::::::::::::::::", JSON.stringify(command))
       await ddb.send(new UpdateCommand(command));
     } catch (error: any) {
       throw Error(error.message);

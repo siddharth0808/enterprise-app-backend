@@ -1,13 +1,12 @@
 import {
   AnalyzeExpenseCommand,
+  LineItemFields,
   TextractClient,
   type AnalyzeExpenseResponse,
   type ExpenseField,
-  type LineItemGroup,
 } from "@aws-sdk/client-textract";
 import { InvoiceExtractor } from "./interface";
 import { ExtractedInvoice } from "./types";
-
 export class TextractInvoiceExtractor implements InvoiceExtractor {
   private readonly textract = new TextractClient({});
 
@@ -28,20 +27,17 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
         },
       }),
     );
-    console.log("TextRact extract::::", JSON.stringify(result))
     return this.normalizeTextractResult(result);
   }
 
   normalizeTextractResult(response: AnalyzeExpenseResponse): ExtractedInvoice {
     const expenseDocument = response.ExpenseDocuments?.[0];
-    console.log("normalizeTextractResult::::", JSON.stringify(expenseDocument))
 
     if (!expenseDocument) {
       throw new Error("No invoice data detected");
     }
 
     const summaryFields = expenseDocument.SummaryFields ?? [];
-
     const invoiceNumber = this.getSummaryValue(
       summaryFields,
       "INVOICE_RECEIPT_ID",
@@ -53,6 +49,7 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
     );
 
     const supplierName = this.getSummaryValue(summaryFields, "VENDOR_NAME");
+    const supplierContact = this.getSummaryValue(summaryFields, "VENDOR_PHONE");
 
     const supplierAddress = this.getSummaryValue(
       summaryFields,
@@ -64,24 +61,14 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
       "VENDOR_GST_NUMBER",
     );
 
-    const subtotal = this.parseNumber(
+    const total = this.parseNumber(
       this.getSummaryValue(summaryFields, "SUBTOTAL"),
     );
 
-    const discount = this.parseNumber(
-      this.getSummaryValue(summaryFields, "DISCOUNT"),
-    );
-
-    const tax = this.parseNumber(this.getSummaryValue(summaryFields, "TAX"));
-
-    const grandTotal = this.parseNumber(
-      this.getSummaryValue(summaryFields, "TOTAL"),
-    );
-    const items: any = [];
-    // const items: any = (expenseDocument.LineItemGroups ?? [])
-    //   .flatMap((group) => group.LineItems ?? [])
-    //   .map(this.normalizeLineItem)
-    //   .filter((item): item is NonNullable<typeof item> => item !== null);
+    const items: any = (expenseDocument.LineItemGroups ?? [])
+      .flatMap((group) => group.LineItems ?? [])
+      .map((group) => this.normalizeLineItem(group))
+      .filter((item): item is NonNullable<typeof item> => item !== null);
 
     return {
       invoiceNumber,
@@ -91,16 +78,12 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
         name: supplierName,
         address: supplierAddress,
         gstin: supplierGstin,
+        contact: supplierContact
       },
 
-      items,
+      products:items,
 
-      totals: {
-        subtotal,
-        discount,
-        tax,
-        grandTotal,
-      },
+      total
     };
   }
 
@@ -126,19 +109,24 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
     return Number.isFinite(number) ? number : undefined;
   }
 
-  normalizeLineItem(group: LineItemGroup) {
-    const fields = group.LineItems?.[0]?.LineItemExpenseFields ?? [];
+  normalizeLineItem(group: LineItemFields) {
+    const fields = group?.LineItemExpenseFields ?? [];
 
-    const values: Record<string, string> = {};
-
+    let values: Record<string, any> = {};
+    const otherValues:any = {};
     for (const field of fields) {
       const type = field.Type?.Text;
       const value = field.ValueDetection?.Text?.trim();
-
-      if (type && value) {
+      if (type === "OTHER") {
+        const label = field.LabelDetection?.Text?.trim();
+        if(label && value)
+        otherValues[label.toUpperCase()] = value
+      }
+      if (type && type !== "OTHER" && value) {
         values[type] = value;
       }
     }
+    values = { ...values, ...otherValues };
 
     const productName = values.ITEM || values.PRODUCT || values.DESCRIPTION;
 
@@ -151,15 +139,13 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
     return {
       productName,
 
-      packing: values.PACKAGING || values.PACKING,
+      manufacturer: values.MANUFACTURER || values['MFG.'] || values['MFR.'],
 
-      manufacturer: values.MANUFACTURER,
+      batchNumber: values.BATCH_NUMBER || values.BATCH || values['BATCH NO.'],
 
-      batchNumber: values.BATCH_NUMBER || values.BATCH,
+      expiryDate: values.EXPIRY_DATE || values.EXPIRY || values['EXP.'],
 
-      expiryDate: values.EXPIRY_DATE || values.EXPIRY,
-
-      hsn: values.HSN,
+      hsn: values.HSN || values.PRODUCT_CODE,
 
       quantity,
 
@@ -167,15 +153,17 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
 
       rate: this.parseNumber(values.RATE || values.UNIT_PRICE || values.PRICE),
 
-      discount: this.parseNumber(values.DISCOUNT),
+      discount: this.parseNumber(values.DISCOUNT || values['DISC.']),
 
-      gstPercent: this.parseNumber(values.TAX_RATE || values.GST_RATE),
+      sgst: this.parseNumber(values.SGST),
 
-      gstAmount: this.parseNumber(values.TAX || values.GST),
+      cgst: this.parseNumber(values.CGST),
 
-      amount: this.parseNumber(values.AMOUNT || values.LINE_TOTAL),
+      amount: this.parseNumber(
+        values.AMOUNT || values.LINE_TOTAL || values.PRICE,
+      ),
     };
   }
 }
 
-export const textractInvoiceExtractor = new TextractInvoiceExtractor()
+export const textractInvoiceExtractor = new TextractInvoiceExtractor();

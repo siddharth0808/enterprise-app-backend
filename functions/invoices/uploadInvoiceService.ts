@@ -11,7 +11,7 @@ const INVOICE_BUCKET = process.env.INVOICE_BUCKET!;
 const INVOICES_PROCESSER_FUNCTION_NAME = process.env.INVOICES_PROCESSER_FUNCTION_NAME!;
 
 
-const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+const ALLOWED_TYPES = ["application/pdf", "image/jpeg","image/jpg", "image/png"];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 interface CreateInvoiceRequest {
@@ -62,11 +62,11 @@ export class UploadInvoiceService {
       );
 
       console.log("Business respons::::", JSON.stringify(business));
-      const businessId = business.Item ? business.Item.id : "";
+      if(!business) throw Error('Business not found!')
 
       await this.validatedUploadInvoiceReq(
         sub,
-        businessId,
+        business.id,
         fileName,
         contentType,
         fileSize,
@@ -76,13 +76,13 @@ export class UploadInvoiceService {
 
       const extension = getExtension(fileName, contentType);
 
-      const documentKey = `${sub}/${businessId}/invoices/${invoiceId}/invoice.${extension}`;
+      const documentKey = `${sub}/${business.id}/invoices/${invoiceId}/invoice.${extension}`;
 
       const now = new Date().toISOString();
 
       const invoice = {
         id: invoiceId,
-        businessId,
+        businessId:business.id,
 
         documentKey,
 

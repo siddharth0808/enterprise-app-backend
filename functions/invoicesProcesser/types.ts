@@ -2,12 +2,12 @@ export interface ExtractedInvoiceSupplier {
   name?: string;
   address?: string;
   gstin?: string;
+  contact?:string;
 }
 
 export interface ExtractedInvoiceItem {
   productName: string;
 
-  packing?: string;
   manufacturer?: string;
 
   batchNumber?: string;
@@ -21,8 +21,8 @@ export interface ExtractedInvoiceItem {
   rate?: number;
   discount?: number;
 
-  gstPercent?: number;
-  gstAmount?: number;
+  sgst?: number;
+  cgst?: number;
 
   amount?: number;
 }
@@ -40,7 +40,7 @@ export interface ExtractedInvoice {
 
   supplier?: ExtractedInvoiceSupplier;
 
-  items: ExtractedInvoiceItem[];
+  products: ExtractedInvoiceItem[];
 
-  totals?: ExtractedInvoiceTotals;
+  total?: number;
 }
