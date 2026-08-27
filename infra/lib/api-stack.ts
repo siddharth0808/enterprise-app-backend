@@ -110,8 +110,8 @@ export class ApiStack extends Stack {
     });
 
     httpApi.addRoutes({
-      path: "/invoices/{invoiceId}/complete",
-      methods: [apigwv2.HttpMethod.POST],
+      path: "/invoices/{invoiceId}/status",
+      methods: [apigwv2.HttpMethod.POST,apigwv2.HttpMethod.GET],
       integration: invoicesIntegration,
     });
 

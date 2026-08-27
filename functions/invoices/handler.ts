@@ -14,11 +14,18 @@ export const handler = async (
 
     const service = new UploadInvoiceService();
 
-    if (method === "POST" && path.includes("/complete")) {
+    if (method === "POST" && path.includes("/status")) {
       const invoiceId = event.pathParameters?.invoiceId;
       if (!invoiceId) return json(400, { message: "invoiceId is required" });
       const response = await service.updateInvoiceStatus(sub, invoiceId);
       return json(201, response);
+    }
+
+    if (method === "GET" && path.includes("/status")) {
+      const invoiceId = event.pathParameters?.invoiceId;
+      if (!invoiceId) return json(400, { message: "invoiceId is required" });
+      const response = await service.getInvoiceStatus(sub, invoiceId);
+      return json(200, response);
     }
 
     const body = event.body ? JSON.parse(event.body) : null;

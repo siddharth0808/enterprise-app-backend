@@ -166,4 +166,27 @@ export class UploadInvoiceService {
       throw Error(error.message);
     }
   }
+
+  public async getInvoiceStatus(sub: string, invoiceId: string){
+    try {
+      const business = await this.ddbService.getBusinessByOwnerId(
+        BUSINESS_TABLE,
+        sub,
+      );
+      if (!business) throw Error("Matching business not found!");
+
+      const invoice = await dynamoDBService.getItem(INVOICES_TABLE, {
+        businessId: business.id,
+        id: invoiceId,
+      });
+
+      if (!Object.keys(invoice).length)
+        throw Error("Matching invoice not found!");
+
+      return {invoiceId, status: invoice.status}
+    } catch (error: any) {
+      console.log("getInvoiceStatus error::::", error.stack);
+      throw Error(error.message);
+    }
+  }
 }
