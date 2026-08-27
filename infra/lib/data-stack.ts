@@ -65,6 +65,19 @@ export class DataStack extends Stack {
       },
     );
 
+    this.productsTable.addGlobalSecondaryIndex({
+      indexName: "byProductName",
+      partitionKey: {
+        name: "businessId",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: "name",
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     this.transactionsTable = new dynamodb.Table(
       this,
       `${APP_NAME}-transactionsTable-${props.stage}`,

@@ -115,6 +115,12 @@ export class ApiStack extends Stack {
       integration: invoicesIntegration,
     });
 
+    httpApi.addRoutes({
+      path: "/invoices/{invoiceId}/review",
+      methods: [apigwv2.HttpMethod.GET],
+      integration: invoicesIntegration,
+    });
+
     new CfnOutput(this, "ApiUrl", { value: httpApi.apiEndpoint });
   }
 }

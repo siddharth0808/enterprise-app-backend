@@ -148,6 +148,7 @@ export class LambdaStack extends Stack {
           INVOICE_BUCKET: props.inventoryFlowBucket.bucketName,
           INVOICES_PROCESSER_FUNCTION_NAME:
             this.invoicesProcesserFn.functionName,
+          PRODUCTS_TABLE: props.productsTable.tableName,
         },
       },
     );
@@ -155,6 +156,7 @@ export class LambdaStack extends Stack {
     props.invoicesTable.grantReadWriteData(this.invoicesFn);
     props.inventoryFlowBucket.grantPut(this.invoicesFn);
     props.inventoryFlowBucket.grantRead(this.invoicesFn);
+    props.productsTable.grantReadData(this.invoicesFn);
 
     this.invoicesProcesserFn.grantInvoke(this.invoicesFn);
   }

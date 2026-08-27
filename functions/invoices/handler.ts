@@ -28,6 +28,13 @@ export const handler = async (
       return json(200, response);
     }
 
+    if (method === "GET" && path.includes("/review")) {
+      const invoiceId = event.pathParameters?.invoiceId;
+      if (!invoiceId) return json(400, { message: "invoiceId is required" });
+      const response = await service.getInvoiceReview(sub, invoiceId);
+      return json(200, response);
+    }
+
     const body = event.body ? JSON.parse(event.body) : null;
     if (!body) {
       return json(400, {

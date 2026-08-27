@@ -100,6 +100,28 @@ export class DynamoDBService {
       throw Error(error.message);
     }
   }
+
+   public async getItemsByIndex(
+    tableName: string,
+    IndexName:string,
+    KeyConditionExpression: any,
+    ExpressionAttributeValues: any,
+  ) {
+    try {
+      const command = {
+        TableName: tableName,
+        IndexName,
+        KeyConditionExpression,
+        ExpressionAttributeValues,
+      };
+      console.log("getItemsByIndex command::::", JSON.stringify(command));
+      const resposne = await ddb.send(new QueryCommand(command));
+      console.log("getItemsByIndex::::::", JSON.stringify(resposne));
+      return resposne.Items ? resposne.Items : [];
+    } catch (error: any) {
+      throw Error(error.message);
+    }
+  }
 }
 
 export const dynamoDBService = new DynamoDBService();

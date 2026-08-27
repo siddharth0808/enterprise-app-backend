@@ -4,14 +4,22 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { dynamoDBService } from "../shared/ddb.service";
 import { s3Service } from "../shared/s3Bucket.service";
 import { lambdaService } from "../shared/lambda.service";
+import { ExtractedInvoiceItem } from "../invoicesProcesser/types";
+import { QueryCommand } from "@aws-sdk/lib-dynamodb";
 
 const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
 const INVOICES_TABLE = process.env.INVOICES_TABLE!;
 const INVOICE_BUCKET = process.env.INVOICE_BUCKET!;
-const INVOICES_PROCESSER_FUNCTION_NAME = process.env.INVOICES_PROCESSER_FUNCTION_NAME!;
+const INVOICES_PROCESSER_FUNCTION_NAME =
+  process.env.INVOICES_PROCESSER_FUNCTION_NAME!;
+const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE!;
 
-
-const ALLOWED_TYPES = ["application/pdf", "image/jpeg","image/jpg", "image/png"];
+const ALLOWED_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 interface CreateInvoiceRequest {
@@ -23,7 +31,7 @@ export class UploadInvoiceService {
   constructor(
     public readonly ddbService = dynamoDBService,
     public readonly s3 = s3Service,
-    public readonly lambda = lambdaService
+    public readonly lambda = lambdaService,
   ) {}
 
   async validatedUploadInvoiceReq(
@@ -62,7 +70,7 @@ export class UploadInvoiceService {
       );
 
       console.log("Business respons::::", JSON.stringify(business));
-      if(!business) throw Error('Business not found!')
+      if (!business) throw Error("Business not found!");
 
       await this.validatedUploadInvoiceReq(
         sub,
@@ -82,7 +90,7 @@ export class UploadInvoiceService {
 
       const invoice = {
         id: invoiceId,
-        businessId:business.id,
+        businessId: business.id,
 
         documentKey,
 
@@ -155,19 +163,22 @@ export class UploadInvoiceService {
 
       const lambdaEvent = {
         businessId: business.id,
-         invoiceId,
-      }
+        invoiceId,
+      };
 
-      await this.lambda.invokeAsync(INVOICES_PROCESSER_FUNCTION_NAME, lambdaEvent)
+      await this.lambda.invokeAsync(
+        INVOICES_PROCESSER_FUNCTION_NAME,
+        lambdaEvent,
+      );
 
-      return { invoiceId, status: 'PROCESSING' };
+      return { invoiceId, status: "PROCESSING" };
     } catch (error: any) {
       console.log("updateInvoiceUploadStatus error::::", error.stack);
       throw Error(error.message);
     }
   }
 
-  public async getInvoiceStatus(sub: string, invoiceId: string){
+  public async getInvoiceStatus(sub: string, invoiceId: string) {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -183,7 +194,70 @@ export class UploadInvoiceService {
       if (!Object.keys(invoice).length)
         throw Error("Matching invoice not found!");
 
-      return {invoiceId, status: invoice.status}
+      return { invoiceId, status: invoice.status };
+    } catch (error: any) {
+      console.log("getInvoiceStatus error::::", error.stack);
+      throw Error(error.message);
+    }
+  }
+
+  public async getInvoiceReview(ownerId: string, invoiceId: string) {
+    try {
+      const business = await this.ddbService.getBusinessByOwnerId(
+        BUSINESS_TABLE,
+        ownerId,
+      );
+      if (!business) throw Error("Matching business not found!");
+
+      const invoice = await dynamoDBService.getItem(INVOICES_TABLE, {
+        businessId: business.id,
+        id: invoiceId,
+      });
+
+      if (!Object.keys(invoice).length)
+        throw Error("Matching invoice not found!");
+
+      let invoiceProducts: ExtractedInvoiceItem[] = [];
+
+      try {
+        invoiceProducts = invoice?.products
+        ? JSON.parse(invoice.products)
+        : [];
+      } catch (error:any) {
+        console.log("Error while pars json:::", error.stack);
+        throw Error("Error while pars json")
+      }  
+      console.log("invoiceProducts:::::", JSON.stringify(invoiceProducts))
+      
+      
+      const productNames = invoiceProducts.map(
+        (product: ExtractedInvoiceItem) => product.productName,
+      );
+
+      const existingProducts = await Promise.all(
+        productNames.map((name) =>
+          this.ddbService.getItemsByIndex(
+            PRODUCTS_TABLE,
+            "byProductName",
+            "businessId = :businessId AND normalizedName = :name",
+            {
+              ":businessId": business.id,
+              ":name": name,
+            },
+          ),
+        ),
+      );
+      console.log("existingProducts:::::", JSON.stringify(existingProducts))
+      if(!existingProducts.length){
+        const newProducts =  invoiceProducts.map((product:any)=>{
+          return{
+            ...product,
+            stock:'NEW'
+          }
+        })
+        return newProducts
+      }
+      return [];
     } catch (error: any) {
       console.log("getInvoiceStatus error::::", error.stack);
       throw Error(error.message);
