@@ -9,7 +9,7 @@ export const extractedInvoiceSupplierSchema = z.object({
 });
 
 export const extractedInvoiceItemSchema = z.object({
-  productName: z.string().trim().min(1),
+  name: z.string().trim().min(1),
 
   manufacturer: z.string().trim().min(1).optional(),
 

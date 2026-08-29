@@ -4,7 +4,7 @@ import { dynamoDBService } from "../shared/ddb.service";
 import { randomUUID } from "crypto";
 import { Products } from "../shared/types";
 import { ExtractedInvoiceItem } from "../invoicesProcesser/types";
-import { expiryDate } from "../shared/utils";
+import { formatExpiryDate } from "../shared/utils";
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE!;
@@ -79,21 +79,33 @@ export class ProductService {
       const newProducts = products.filter(
         (product: ExtractedInvoiceItem) => product.status === "NEW",
       );
-      let items:any
+      let items: any;
       if (newProducts.length) {
-         items = newProducts.map((product: ExtractedInvoiceItem) => {
+        items = newProducts.map((product: ExtractedInvoiceItem) => {
           return {
+            id: product.id,
             ownerId,
             businessId: business.id,
+            name: product.name,
+            category: business.businessType,
+            manufacturer: product.manufacturer,
+            rate: Number(product.rate),
+            mrp: Number(product.mrp),
+            batchNumber: product.batchNumber,
+            hsn: product.hsn,
+            status: product.status,
+            amount: Number(product.amount),
             currentStock: Number(product.quantity),
             minimumStock: Number(product?.minimumStock || 0),
+            cgst: Number(product.cgst),
+            sgst: Number(product.sgst),
+            expiryDate: formatExpiryDate(product.expiryDate || ""),
+            discount: Number(product.discount),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            expiryDate: expiryDate(product.expiryDate || ""),
-            ...product,
           };
         });
-        await this.ddbService.batchWriteItems(PRODUCTS_TABLE, items)
+        await this.ddbService.batchWriteItems(PRODUCTS_TABLE, items);
       }
 
       return items;

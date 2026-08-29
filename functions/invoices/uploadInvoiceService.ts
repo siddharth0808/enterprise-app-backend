@@ -175,7 +175,7 @@ export class UploadInvoiceService {
         lambdaEvent,
       );
 
-      return { invoiceId, status: "PROCESSING" };
+      return { invoiceId, status: "UPLOADED" };
     } catch (error: any) {
       console.log("updateInvoiceUploadStatus error::::", error.stack);
       throw Error(error.message);
@@ -234,8 +234,8 @@ export class UploadInvoiceService {
       const productNames = invoiceProducts.map(
         (product: ExtractedInvoiceItem) => product.name,
       );
-
-      const existingProducts = await Promise.all(
+      let existingProducts = [];
+      existingProducts = await Promise.all(
         productNames.map((name) =>
           this.ddbService.getItemsByIndex(
             PRODUCTS_TABLE,
@@ -261,25 +261,36 @@ export class UploadInvoiceService {
         "flatedExisitngProducts:::::",
         JSON.stringify(flatedExisitngProducts),
       );
-
+      let newProducts: any = [];
       if (!flatedExisitngProducts.length) {
-        const newProducts = invoiceProducts.map((product: any) => {
+        newProducts = invoiceProducts.map((product: any) => {
           return {
             ...product,
             id: randomUUID(),
             status: "NEW",
-            currentQuantity:0
+            currentQuantity: 0,
           };
         });
-        return {
-          invoiceNumber: invoice.invoiceNumber,
-          invoiceDate: invoice.invoiceDate,
-          products: newProducts,
-          supplier: invoice.supplier,
-          total: invoice.total,
-        } as ExtractedInvoice;
+      } else {
+        existingProducts = invoiceProducts.map((product: any) => {
+          const existingProduct = flatedExisitngProducts.find(
+            (e: any) => e.name === product.name,
+          );
+          return {
+            ...product,
+            status: "EXISTING",
+            currentQuantity: existingProduct.currentStock,
+          };
+        });
       }
-      return {};
+
+      return {
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: invoice.invoiceDate,
+        products: [...newProducts, ...existingProducts],
+        supplier: invoice.supplier,
+        total: invoice.total,
+      } as ExtractedInvoice;
     } catch (error: any) {
       console.log("getInvoiceStatus error::::", error.stack);
       throw Error(error.message);

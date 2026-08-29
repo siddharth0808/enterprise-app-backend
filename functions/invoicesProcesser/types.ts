@@ -6,6 +6,7 @@ export interface ExtractedInvoiceSupplier {
 }
 
 export interface ExtractedInvoiceItem {
+  id?: string;
   name: string;
 
   manufacturer?: string;

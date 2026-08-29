@@ -1,4 +1,3 @@
-import { response } from "../shared/http";
 import { InvoiceProcesserService } from "./service";
 
 export const handler = async (event: any) => {
