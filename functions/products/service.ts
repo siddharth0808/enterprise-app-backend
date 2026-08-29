@@ -3,6 +3,8 @@ import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDBService } from "../shared/ddb.service";
 import { randomUUID } from "crypto";
 import { Products } from "../shared/types";
+import { ExtractedInvoiceItem } from "../invoicesProcesser/types";
+import { expiryDate } from "../shared/utils";
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE!;
@@ -53,10 +55,48 @@ export class ProductService {
         updatedAt: new Date().toISOString(),
       };
 
-      await this.ddbService.putItems(PRODUCTS_TABLE, item)
+      await this.ddbService.putItems(PRODUCTS_TABLE, item);
       ddb.send(new PutCommand({ TableName: PRODUCTS_TABLE, Item: item }));
 
       return item;
+    } catch (error: any) {
+      console.log(error.stack);
+      throw Error(error.message);
+    }
+  }
+
+  public async importProducts(
+    ownerId: string,
+    products: ExtractedInvoiceItem[],
+  ) {
+    try {
+      const business = await this.ddbService.getBusinessByOwnerId(
+        BUSINESS_TABLE,
+        ownerId,
+      );
+      if (!business) throw Error("Business not found!");
+
+      const newProducts = products.filter(
+        (product: ExtractedInvoiceItem) => product.status === "NEW",
+      );
+      let items:any
+      if (newProducts.length) {
+         items = newProducts.map((product: ExtractedInvoiceItem) => {
+          return {
+            ownerId,
+            businessId: business.id,
+            currentStock: Number(product.quantity),
+            minimumStock: Number(product?.minimumStock || 0),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            expiryDate: expiryDate(product.expiryDate || ""),
+            ...product,
+          };
+        });
+        await this.ddbService.batchWriteItems(PRODUCTS_TABLE, items)
+      }
+
+      return items;
     } catch (error: any) {
       console.log(error.stack);
       throw Error(error.message);

@@ -137,7 +137,7 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
     }
 
     return {
-      productName,
+      name:productName,
 
       manufacturer: values.MANUFACTURER || values['MFG.'] || values['MFR.'],
 

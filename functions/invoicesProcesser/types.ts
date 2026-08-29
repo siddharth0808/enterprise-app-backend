@@ -6,7 +6,7 @@ export interface ExtractedInvoiceSupplier {
 }
 
 export interface ExtractedInvoiceItem {
-  productName: string;
+  name: string;
 
   manufacturer?: string;
 
@@ -25,7 +25,8 @@ export interface ExtractedInvoiceItem {
   cgst?: number;
 
   amount?: number;
-  stock?:string
+  status?:string;
+  minimumStock?:number
 }
 
 export interface ExtractedInvoiceTotals {

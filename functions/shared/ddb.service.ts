@@ -4,10 +4,13 @@ import {
   GetCommand,
   PutCommand,
   UpdateCommand,
-  QueryCommand
+  QueryCommand,
+  BatchWriteCommand,
+  BatchWriteCommandInput
 } from "@aws-sdk/lib-dynamodb";
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const MAX_BATCH_SIZE = 25;
 
 export class DynamoDBService {
   constructor() {}
@@ -124,6 +127,43 @@ export class DynamoDBService {
       throw Error(error.message);
     }
   }
+
+ async batchWriteItems(
+  tableName: string,
+  items: any
+): Promise<void> {
+  if (!items.length) {
+    return;
+  }
+
+  for (let i = 0; i < items.length; i += MAX_BATCH_SIZE) {
+    const batch = items.slice(i, i + MAX_BATCH_SIZE);
+
+    const requestItems: BatchWriteCommandInput["RequestItems"] = {
+      [tableName]: batch.map((item:any) => ({
+        PutRequest: {
+          Item: item,
+        },
+      })),
+    };
+
+    let unprocessedItems = requestItems;
+
+    do {
+      const response = await ddb.send(
+        new BatchWriteCommand({
+          RequestItems: unprocessedItems,
+        })
+      );
+
+      unprocessedItems = response.UnprocessedItems ?? {};
+
+    } while (
+      unprocessedItems[tableName] &&
+      unprocessedItems[tableName].length > 0
+    );
+  }
+};
 }
 
 export const dynamoDBService = new DynamoDBService();

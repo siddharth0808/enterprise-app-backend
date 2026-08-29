@@ -232,7 +232,7 @@ export class UploadInvoiceService {
       console.log("invoiceProducts:::::", JSON.stringify(invoiceProducts));
 
       const productNames = invoiceProducts.map(
-        (product: ExtractedInvoiceItem) => product.productName,
+        (product: ExtractedInvoiceItem) => product.name,
       );
 
       const existingProducts = await Promise.all(

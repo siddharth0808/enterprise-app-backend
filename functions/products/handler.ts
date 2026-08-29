@@ -5,10 +5,21 @@ import { ProductService } from "./service";
 export const handler = async (
   event: APIGatewayProxyEventV2WithJWTAuthorizer,
 ) => {
+  console.log("EVENT::::", JSON.stringify(event));
+
   const method = event.requestContext.http.method;
+  const path = event.requestContext.http.path;
   const { sub } = getClaims(event);
 
+
   const service = new ProductService();
+
+  if (method === "POST" && path.includes('/import')) {
+    const products = JSON.parse(event.body ?? "[]");
+    if(!products.length) return json(400, 'No products in payload!')
+    const item = await service.importProducts(sub, products);
+    return json(201, item);
+  }
 
   if (method === "POST") {
     const body = JSON.parse(event.body ?? "{}");

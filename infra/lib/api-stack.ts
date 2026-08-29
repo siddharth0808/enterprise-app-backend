@@ -96,6 +96,11 @@ export class ApiStack extends Stack {
       methods: [apigwv2.HttpMethod.POST, apigwv2.HttpMethod.GET],
       integration: productsIntegration,
     });
+    httpApi.addRoutes({
+      path: "/products/import",
+      methods: [apigwv2.HttpMethod.POST],
+      integration: productsIntegration,
+    });
 
     httpApi.addRoutes({
       path: "/inventory/{businessId}/{productId}/transactions",
