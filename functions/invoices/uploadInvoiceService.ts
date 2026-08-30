@@ -234,8 +234,7 @@ export class UploadInvoiceService {
       const productNames = invoiceProducts.map(
         (product: ExtractedInvoiceItem) => product.name,
       );
-      let existingProducts = [];
-      existingProducts = await Promise.all(
+      const existingProducts = await Promise.all(
         productNames.map((name) =>
           this.ddbService.getItemsByIndex(
             PRODUCTS_TABLE,
@@ -261,9 +260,9 @@ export class UploadInvoiceService {
         "flatedExisitngProducts:::::",
         JSON.stringify(flatedExisitngProducts),
       );
-      let newProducts: any = [];
+      let products: any = [];
       if (!flatedExisitngProducts.length) {
-        newProducts = invoiceProducts.map((product: any) => {
+        products = invoiceProducts.map((product: any) => {
           return {
             ...product,
             id: randomUUID(),
@@ -272,14 +271,16 @@ export class UploadInvoiceService {
           };
         });
       } else {
-        existingProducts = invoiceProducts.map((product: any) => {
+        products = invoiceProducts.map((product: any) => {
           const existingProduct = flatedExisitngProducts.find(
             (e: any) => e.name === product.name,
           );
           return {
             ...product,
+            id: existingProduct.id,
             status: "EXISTING",
             currentQuantity: existingProduct.currentStock,
+            amount: Number(existingProduct.amount) + Number(product.amount)
           };
         });
       }
@@ -287,7 +288,7 @@ export class UploadInvoiceService {
       return {
         invoiceNumber: invoice.invoiceNumber,
         invoiceDate: invoice.invoiceDate,
-        products: [...newProducts, ...existingProducts],
+        products,
         supplier: invoice.supplier,
         total: invoice.total,
       } as ExtractedInvoice;

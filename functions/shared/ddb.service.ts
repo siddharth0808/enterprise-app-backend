@@ -1,4 +1,4 @@
-import { DynamoDBClient  } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   GetCommand,
@@ -6,8 +6,9 @@ import {
   UpdateCommand,
   QueryCommand,
   BatchWriteCommand,
-  BatchWriteCommandInput
+  BatchWriteCommandInput,
 } from "@aws-sdk/lib-dynamodb";
+import { UpdateItem } from "./types";
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const MAX_BATCH_SIZE = 25;
@@ -77,7 +78,10 @@ export class DynamoDBService {
         ExpressionAttributeNames,
         ExpressionAttributeValues,
       };
-      console.log("updateItems command::::::::::::::::", JSON.stringify(command))
+      console.log(
+        "updateItems command::::::::::::::::",
+        JSON.stringify(command),
+      );
       await ddb.send(new UpdateCommand(command));
     } catch (error: any) {
       throw Error(error.message);
@@ -104,12 +108,12 @@ export class DynamoDBService {
     }
   }
 
-   public async getItemsByIndex(
+  public async getItemsByIndex(
     tableName: string,
-    IndexName:string,
+    IndexName: string,
     KeyConditionExpression: any,
-    ExpressionAttributeNames:any,
-    ExpressionAttributeValues: any, 
+    ExpressionAttributeNames: any,
+    ExpressionAttributeValues: any,
   ) {
     try {
       const command = {
@@ -128,42 +132,56 @@ export class DynamoDBService {
     }
   }
 
- async batchWriteItems(
-  tableName: string,
-  items: any
-): Promise<void> {
-  if (!items.length) {
-    return;
-  }
+  public async batchWriteItems(tableName: string, items: any): Promise<void> {
+    if (!items.length) {
+      return;
+    }
 
-  for (let i = 0; i < items.length; i += MAX_BATCH_SIZE) {
-    const batch = items.slice(i, i + MAX_BATCH_SIZE);
+    for (let i = 0; i < items.length; i += MAX_BATCH_SIZE) {
+      const batch = items.slice(i, i + MAX_BATCH_SIZE);
 
-    const requestItems: BatchWriteCommandInput["RequestItems"] = {
-      [tableName]: batch.map((item:any) => ({
-        PutRequest: {
-          Item: item,
-        },
-      })),
-    };
+      const requestItems: BatchWriteCommandInput["RequestItems"] = {
+        [tableName]: batch.map((item: any) => ({
+          PutRequest: {
+            Item: item,
+          },
+        })),
+      };
 
-    let unprocessedItems = requestItems;
+      let unprocessedItems = requestItems;
 
-    do {
-      const response = await ddb.send(
-        new BatchWriteCommand({
-          RequestItems: unprocessedItems,
-        })
+      do {
+        const response = await ddb.send(
+          new BatchWriteCommand({
+            RequestItems: unprocessedItems,
+          }),
+        );
+
+        unprocessedItems = response.UnprocessedItems ?? {};
+      } while (
+        unprocessedItems[tableName] &&
+        unprocessedItems[tableName].length > 0
       );
-
-      unprocessedItems = response.UnprocessedItems ?? {};
-
-    } while (
-      unprocessedItems[tableName] &&
-      unprocessedItems[tableName].length > 0
-    );
+    }
   }
-};
+
+  public async batchUpdateItems(tableName: string, items: UpdateItem[]) {
+    const results = await Promise.all(
+      items.map((item) =>
+        ddb.send(
+          new UpdateCommand({
+            TableName: tableName,
+            Key: item.Key,
+            UpdateExpression: item.UpdateExpression,
+            ExpressionAttributeValues: item.ExpressionAttributeValues,
+            ExpressionAttributeNames: item.ExpressionAttributeNames,
+          }),
+        ),
+      ),
+    );
+
+    return results;
+  }
 }
 
 export const dynamoDBService = new DynamoDBService();

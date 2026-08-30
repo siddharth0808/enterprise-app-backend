@@ -40,17 +40,24 @@ export class ProductService {
       if (!business) throw Error("Business not found!");
 
       const item: Products = {
+        id: randomUUID(),
         ownerId,
         businessId: business.id,
-        id: randomUUID(),
         name: body.name,
-        costPrice: Number(body.costPrice),
-        sellingPrice: Number(body.sellingPrice),
-        currentStock: Number(body.currentStock),
-        minimumStock: Number(body.minimumStock),
-        category: body.category,
-        sku: body.sku,
-        brand: body.brand,
+        category: business.businessType,
+        manufacturer: body?.manufacturer || "",
+        rate: Number(body.rate),
+        mrp: Number(body.mrp),
+        batchNumber: body?.batchNumber || "",
+        hsn: body?.hsn || "",
+        status: body.status,
+        amount: Number(body?.amount || 0),
+        currentStock: Number(body.quantity),
+        minimumStock: Number(body?.minimumStock || 0),
+        cgst: Number(body?.cgst || 0),
+        sgst: Number(body?.sgst || 0),
+        expiryDate: formatExpiryDate(body.expiryDate || ""),
+        discount: Number(body?.discount || 0),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -78,6 +85,10 @@ export class ProductService {
 
       const newProducts = products.filter(
         (product: ExtractedInvoiceItem) => product.status === "NEW",
+      );
+
+      const existingProducts = products.filter(
+        (product: ExtractedInvoiceItem) => product.status === "EXISITING",
       );
       let items: any;
       if (newProducts.length) {
@@ -107,7 +118,32 @@ export class ProductService {
         });
         await this.ddbService.batchWriteItems(PRODUCTS_TABLE, items);
       }
+      if (existingProducts.length) {
+        items = existingProducts.map((product: ExtractedInvoiceItem) => {
+          return {
+            Key: {
+              businessId: business.id,
+              id: product.id,
+            },
+            UpdateExpression:
+              "SET #status = :status, currentStock = :currentStock, mrp = :mrp, rate = :rate, amount = :amount, updatedAt = :updatedAt",
+            ExpressionAttributeNames: {
+              "#status": "status",
+            },
+            ExpressionAttributeValues: {
+              ":status": product.status,
+              ":currentStock":
+                Number(product.quantity) + Number(product.currentQuantity),
+              ":mrp": Number(product.mrp),
+              ":rate": Number(product.rate),
+              ":amount": Number(product.amount),
+              ":updatedAt": new Date().toISOString(),
+            },
+          };
+        });
 
+        await this.ddbService.batchUpdateItems(PRODUCTS_TABLE, items)
+      }
       return items;
     } catch (error: any) {
       console.log(error.stack);

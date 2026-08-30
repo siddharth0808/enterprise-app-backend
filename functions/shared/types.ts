@@ -16,14 +16,21 @@ export interface Products {
   businessId: string;
   id: string;
   name: string;
-  brand: string;
-  costPrice: number;
-  sellingPrice: number;
+  rate: number;
+  mrp: number;
   currentStock: number;
   minimumStock: number;
-  category: string;
-  sku: string;
-   createdAt: string;
+  expiryDate: number;
+  manufacturer?: string;
+  batchNumber?: string;
+  hsn?: string;
+  status?: string;
+  amount?: number;
+  cgst?: number;
+  sgst?: number;
+  discount?: number;
+  category?: string;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -55,16 +62,11 @@ export interface Order {
 
 export interface InventoryTransaction {
   id: string;
-  ownerId:string
+  ownerId: string;
   businessId: string;
   productId: string;
 
-  type:
-    | "STOCK_IN"
-    | "STOCK_OUT"
-    | "DAMAGE"
-    | "RETURN"
-    | "ADJUSTMENT";
+  type: "STOCK_IN" | "STOCK_OUT" | "DAMAGE" | "RETURN" | "ADJUSTMENT";
 
   quantity: number;
 
@@ -78,11 +80,19 @@ export interface InventoryTransaction {
 }
 
 export const TRANSACTION_TYPE_OPTIONS = [
-  { value: 'STOCK_IN', label: 'Stock In', sign: 1 },
-  { value: 'STOCK_OUT', label: 'Stock Out', sign: -1 },
-  { value: 'DAMAGE', label: 'Damage', sign: -1 },
-  { value: 'RETURN', label: 'Return', sign: 1 },
-  { value: 'ADJUSTMENT', label: 'Adjustment', sign: 1 },
+  { value: "STOCK_IN", label: "Stock In", sign: 1 },
+  { value: "STOCK_OUT", label: "Stock Out", sign: -1 },
+  { value: "DAMAGE", label: "Damage", sign: -1 },
+  { value: "RETURN", label: "Return", sign: 1 },
+  { value: "ADJUSTMENT", label: "Adjustment", sign: 1 },
 ] as const;
 
-export type TransactionType = (typeof TRANSACTION_TYPE_OPTIONS)[number]['value'];
+export type TransactionType =
+  (typeof TRANSACTION_TYPE_OPTIONS)[number]["value"];
+
+export interface UpdateItem {
+  Key: Record<string, any>;
+  UpdateExpression: string;
+  ExpressionAttributeValues?: Record<string, any>;
+  ExpressionAttributeNames?: Record<string, string>;
+}

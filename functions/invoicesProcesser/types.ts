@@ -27,7 +27,8 @@ export interface ExtractedInvoiceItem {
 
   amount?: number;
   status?:string;
-  minimumStock?:number
+  minimumStock?:number;
+  currentQuantity?:number
 }
 
 export interface ExtractedInvoiceTotals {
