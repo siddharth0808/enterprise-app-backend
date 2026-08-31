@@ -1,4 +1,4 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, UpdateItemCommandInput } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   GetCommand,
@@ -71,12 +71,13 @@ export class DynamoDBService {
     ExpressionAttributeValues: any,
   ) {
     try {
-      const command = {
+      const command: UpdateItemCommandInput = {
         TableName: tableName,
         Key,
         UpdateExpression,
         ExpressionAttributeNames,
         ExpressionAttributeValues,
+        ReturnValues: 'ALL_NEW'
       };
       console.log(
         "updateItems command::::::::::::::::",

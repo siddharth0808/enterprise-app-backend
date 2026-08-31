@@ -31,7 +31,7 @@ export class ProductService {
     }
   }
 
-  public async createProducts(ownerId: string, body: any) {
+  public async createProduct(ownerId: string, body: any) {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -61,10 +61,64 @@ export class ProductService {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      console.log("items:::::::::::::::::::", JSON.stringify(item))
+      console.log("items:::::::::::::::::::", JSON.stringify(item));
       await this.ddbService.putItems(PRODUCTS_TABLE, item);
-      ddb.send(new PutCommand({ TableName: PRODUCTS_TABLE, Item: item }));
 
+      return item;
+    } catch (error: any) {
+      console.log(error.stack);
+      throw Error(error.message);
+    }
+  }
+
+  public async updateProduct(ownerId: string, productId: string, body: any) {
+    try {
+      const {
+        name,
+        mrp,
+        rate,
+        currentStock,
+        minimumStock,
+        expiryDate,
+        manufacturer,
+        amount,
+        discount,
+      } = body;
+      const business = await this.ddbService.getBusinessByOwnerId(
+        BUSINESS_TABLE,
+        ownerId,
+      );
+      if (!business) throw Error("Business not found!");
+      const updateItems = {
+        Key: {
+          businessId: business.id,
+          id: productId,
+        },
+        UpdateExpression: `SET #name =: name, mrp =:mrp, rate =: rate, currentStock =: currentStock, minimumStock =: minimumStock,  expiryDate =: expiryDate, manufacturer =:manufacturer, amount =: amount, discount =: discount,  updatedAt = :updatedAt`,
+        ExpressionAttributeNames: {
+          "#name": "name",
+        },
+        ExpressionAttributeValues: {
+          ":name": name,
+          ":mrp": Number(mrp),
+          ":rate": Number(rate),
+          ":currentStock": Number(currentStock),
+          ":minimumStock": Number(minimumStock),
+          ":expiryDate": formatExpiryDate(expiryDate),
+          ":manufacturer": manufacturer,
+          ":amount": Number(amount),
+          ":discount": Number(discount),
+          ":updatedAt": new Date().toISOString(),
+        },
+      };
+
+      const item = await this.ddbService.updateItems(
+        PRODUCTS_TABLE,
+        updateItems.Key,
+        updateItems.UpdateExpression,
+        updateItems.ExpressionAttributeNames,
+        updateItems.ExpressionAttributeValues,
+      );
       return item;
     } catch (error: any) {
       console.log(error.stack);
@@ -142,8 +196,8 @@ export class ProductService {
           };
         });
 
-       await this.ddbService.batchUpdateItems(PRODUCTS_TABLE, items);
-       items = existingProducts
+        await this.ddbService.batchUpdateItems(PRODUCTS_TABLE, items);
+        items = existingProducts;
       }
       return items;
     } catch (error: any) {

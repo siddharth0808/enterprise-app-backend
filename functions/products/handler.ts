@@ -28,8 +28,22 @@ export const handler = async (
     if (missing.length) {
       return json(400, { message: `Missing fields: ${missing.join(", ")}` });
     }
-    const item = await service.createProducts(sub, body);
+    const item = await service.createProduct(sub, body);
     return json(201, item);
+  }
+
+  if (method === "PATCH") {
+      const { id }: any = event.pathParameters;
+
+    const body = JSON.parse(event.body ?? "{}");
+    const required = ["name", "mrp", "rate", "currentStock", "expiryDate"];
+
+    const missing = required.filter((field) => !body[field]);
+    if (missing.length) {
+      return json(400, { message: `Missing fields: ${missing.join(", ")}` });
+    }
+    const item = await service.updateProduct(sub, id, body);
+    return json(200, item);
   }
 
   if (method === "GET") {
