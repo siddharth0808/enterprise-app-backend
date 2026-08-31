@@ -74,7 +74,7 @@ export class TransactionService {
                   id: productId,
                 },
                 UpdateExpression:
-                  "SET currentStock =:currentStock, amount =:amount updatedAt=:updatedAt",
+                  "SET currentStock =:currentStock, amount =:amount, updatedAt=:updatedAt",
                 ExpressionAttributeValues: {
                   ":currentStock": newStock,
                   ":amount": newAmount,
