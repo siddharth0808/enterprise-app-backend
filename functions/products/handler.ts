@@ -36,7 +36,7 @@ export const handler = async (
       const { id }: any = event.pathParameters;
 
     const body = JSON.parse(event.body ?? "{}");
-    const required = ["name", "mrp", "rate", "currentStock", "expiryDate"];
+    const required = ["name", "mrp", "rate", "expiryDate"];
 
     const missing = required.filter((field) => !body[field]);
     if (missing.length) {
