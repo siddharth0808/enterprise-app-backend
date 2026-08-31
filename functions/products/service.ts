@@ -45,23 +45,23 @@ export class ProductService {
         businessId: business.id,
         name: body.name,
         category: business.businessType,
-        manufacturer: body?.manufacturer || "",
         rate: Number(body.rate),
         mrp: Number(body.mrp),
+        currentStock: Number(body.currentStock),
+        manufacturer: body?.manufacturer || "",
         batchNumber: body?.batchNumber || "",
         hsn: body?.hsn || "",
         status: body.status,
         amount: Number(body?.amount || 0),
-        currentStock: Number(body.quantity),
         minimumStock: Number(body?.minimumStock || 0),
         cgst: Number(body?.cgst || 0),
         sgst: Number(body?.sgst || 0),
-        expiryDate: formatExpiryDate(body.expiryDate || ""),
+        expiryDate: new Date(body.expiryDate).valueOf() || 0,
         discount: Number(body?.discount || 0),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-
+      console.log("items:::::::::::::::::::", JSON.stringify(item))
       await this.ddbService.putItems(PRODUCTS_TABLE, item);
       ddb.send(new PutCommand({ TableName: PRODUCTS_TABLE, Item: item }));
 
@@ -88,7 +88,7 @@ export class ProductService {
       );
 
       const existingProducts = products.filter(
-        (product: ExtractedInvoiceItem) => product.status === "EXISITING",
+        (product: ExtractedInvoiceItem) => product.status === "EXISTING",
       );
       let items: any;
       if (newProducts.length) {
@@ -142,7 +142,8 @@ export class ProductService {
           };
         });
 
-        await this.ddbService.batchUpdateItems(PRODUCTS_TABLE, items)
+       await this.ddbService.batchUpdateItems(PRODUCTS_TABLE, items);
+       items = existingProducts
       }
       return items;
     } catch (error: any) {

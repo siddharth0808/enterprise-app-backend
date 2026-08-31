@@ -23,7 +23,7 @@ export const handler = async (
 
   if (method === "POST") {
     const body = JSON.parse(event.body ?? "{}");
-    const required = ["name", "costPrice", "sellingPrice"];
+    const required = ["name", "mrp", "rate", "currentStock", "expiryDate"];
     const missing = required.filter((field) => !body[field]);
     if (missing.length) {
       return json(400, { message: `Missing fields: ${missing.join(", ")}` });
