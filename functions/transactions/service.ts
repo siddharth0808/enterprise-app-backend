@@ -30,21 +30,19 @@ export class TransactionService {
         ownerId,
       );
       if (!business) throw Error("Business not found!");
-      const product = await ddb.send(
-        new GetCommand({
-          TableName: PRODUCTS_TABLE,
-          Key: {
+      const product = await this.ddbService.getItem(PRODUCTS_TABLE, {
             businessId: business.id,
             id: productId,
-          },
-        }),
-      );
+          })
 
-      const currentStock = product?.Item?.currentStock ?? 0;
+      const currentStock = product?.currentStock ?? 0;
+      const amount = product?.amount ?? 0;
+      const rate = product?.rate ?? 0;
+
       const sign = getTransactionSign(body.type);
       const signedQuantity = sign * Math.abs(Number(body.quantity) || 0);
       const newStock = Number(currentStock + signedQuantity);
-
+      const newAmount =  Number(newStock * rate)
       if (newStock < 0)
         return json(400, {
           message: `Adjustment quantity could not be greater than current stock!`,
@@ -59,6 +57,7 @@ export class TransactionService {
         quantity: Number(body.quantity),
         previousStock: Number(currentStock),
         newStock,
+        newAmount,
         reason: body.reason ?? "",
         createdBy: fullName ?? "",
         createdAt: new Date().toISOString(),
@@ -75,9 +74,10 @@ export class TransactionService {
                   id: productId,
                 },
                 UpdateExpression:
-                  "SET currentStock =:currentStock, updatedAt=:updatedAt",
+                  "SET currentStock =:currentStock, amount =:amount updatedAt=:updatedAt",
                 ExpressionAttributeValues: {
                   ":currentStock": newStock,
+                  ":amount": newAmount,
                   ":updatedAt": new Date().toISOString(),
                 },
               },

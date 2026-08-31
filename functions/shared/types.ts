@@ -72,7 +72,7 @@ export interface InventoryTransaction {
 
   previousStock: number;
   newStock: number;
-
+  newAmount?:number;
   reason?: string;
 
   createdBy: string;
