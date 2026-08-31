@@ -77,13 +77,14 @@ export class DynamoDBService {
         UpdateExpression,
         ExpressionAttributeNames,
         ExpressionAttributeValues,
-        ReturnValues: 'ALL_NEW'
+        ReturnValues: 'ALL_NEW',
       };
       console.log(
         "updateItems command::::::::::::::::",
         JSON.stringify(command),
       );
-      await ddb.send(new UpdateCommand(command));
+      const res = await ddb.send(new UpdateCommand(command));
+      return res.Attributes;
     } catch (error: any) {
       throw Error(error.message);
     }

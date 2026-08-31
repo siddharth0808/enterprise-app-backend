@@ -94,7 +94,7 @@ export class ProductService {
           businessId: business.id,
           id: productId,
         },
-        UpdateExpression: `SET #name =: name, mrp =:mrp, rate =: rate, currentStock =: currentStock, minimumStock =: minimumStock,  expiryDate =: expiryDate, manufacturer =:manufacturer, amount =: amount, discount =: discount,  updatedAt = :updatedAt`,
+        UpdateExpression: `SET #name = :name, mrp = :mrp, rate = :rate, currentStock = :currentStock, minimumStock = :minimumStock, expiryDate = :expiryDate, manufacturer = :manufacturer, amount = :amount, discount = :discount, updatedAt = :updatedAt`,
         ExpressionAttributeNames: {
           "#name": "name",
         },
@@ -119,7 +119,8 @@ export class ProductService {
         updateItems.ExpressionAttributeNames,
         updateItems.ExpressionAttributeValues,
       );
-      return item;
+      console.log("Updated items:::", JSON.stringify(item))
+      return {...item, id:productId };
     } catch (error: any) {
       console.log(error.stack);
       throw Error(error.message);

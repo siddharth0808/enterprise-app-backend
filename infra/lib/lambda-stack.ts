@@ -103,11 +103,14 @@ export class LambdaStack extends Stack {
         environment: {
           PRODUCTS_TABLE: props.productsTable.tableName,
           TRANSACTIONS_TABLE: props.transactionsTable.tableName,
+          BUSINESS_TABLE: props.businessTable.tableName
         },
       },
     );
     props.productsTable.grantReadWriteData(this.transactionsFn);
     props.transactionsTable.grantReadWriteData(this.transactionsFn);
+    props.businessTable.grantReadData(this.invoicesFn);
+
 
     this.invoicesProcesserFn = new lambda.Function(
       this,
