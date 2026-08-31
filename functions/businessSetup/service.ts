@@ -59,7 +59,7 @@ export class BusinessService {
         ExpressionAttributeValues: {
           ":businessName": body.name,
           ":email": body.email,
-          ":businessAddress": body.addres,
+          ":businessAddress": body.address,
           ":mobile": body.phone,
           ":updatedAt": new Date().toISOString(),
         },
