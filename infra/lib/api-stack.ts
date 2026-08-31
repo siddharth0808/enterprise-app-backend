@@ -110,7 +110,7 @@ export class ApiStack extends Stack {
     });
 
     httpApi.addRoutes({
-      path: "/inventory/{businessId}/{productId}/transactions",
+      path: "/inventory/{productId}/transactions",
       methods: [apigwv2.HttpMethod.POST, apigwv2.HttpMethod.GET],
       integration: transactionsIntegration,
     });

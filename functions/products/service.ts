@@ -104,7 +104,7 @@ export class ProductService {
           ":rate": Number(rate),
           ":currentStock": Number(currentStock),
           ":minimumStock": Number(minimumStock),
-          ":expiryDate": formatExpiryDate(expiryDate),
+          ":expiryDate": new Date(expiryDate).valueOf(),
           ":manufacturer": manufacturer,
           ":amount": Number(amount),
           ":discount": Number(discount),

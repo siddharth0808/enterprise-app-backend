@@ -1,13 +1,12 @@
 import { dynamoDBService } from "../shared/ddb.service";
-import { s3Service } from "../shared/s3Bucket.service";
 import { extractedInvoiceSchema } from "./schema";
 import { textractInvoiceExtractor } from "./textractExtractor";
+
 const INVOICES_TABLE = process.env.INVOICES_TABLE!;
 const INVOICE_BUCKET = process.env.INVOICE_BUCKET!;
 export class InvoiceProcesserService {
   constructor(
     private readonly ddbService = dynamoDBService,
-    private readonly s3 = s3Service,
     public readonly invoiceExtractor = textractInvoiceExtractor,
   ) {}
 
@@ -19,11 +18,6 @@ export class InvoiceProcesserService {
       });
 
       if (!invoice) throw Error("Invoice not found!");
-
-      //   const invoiceBuffer = await this.s3.getObject(
-      //     INVOICE_BUCKET,
-      //     invoice.documentKey,
-      //   );
 
       await this.ddbService.updateItems(
         INVOICES_TABLE,
