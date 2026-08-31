@@ -75,7 +75,7 @@ export class DynamoDBService {
         TableName: tableName,
         Key,
         UpdateExpression,
-        ExpressionAttributeNames,
+        ...(ExpressionAttributeNames ? {ExpressionAttributeNames} : {}) ,
         ExpressionAttributeValues,
         ReturnValues: 'ALL_NEW',
       };

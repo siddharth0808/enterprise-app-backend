@@ -1,12 +1,9 @@
-import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDBService } from "../shared/ddb.service";
 import { randomUUID } from "crypto";
 import { Products } from "../shared/types";
 import { ExtractedInvoiceItem } from "../invoicesProcesser/types";
 import { formatExpiryDate } from "../shared/utils";
 
-const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE!;
 const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
 export class ProductService {

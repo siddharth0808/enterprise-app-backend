@@ -80,14 +80,8 @@ export class ApiStack extends Stack {
     );
 
     httpApi.addRoutes({
-      path: "/business/me",
-      methods: [apigwv2.HttpMethod.GET],
-      integration: businessSetupIntegration,
-    });
-
-    httpApi.addRoutes({
-      path: "/business/setup",
-      methods: [apigwv2.HttpMethod.POST],
+      path: "/business",
+      methods: [apigwv2.HttpMethod.POST,apigwv2.HttpMethod.PATCH, apigwv2.HttpMethod.GET],
       integration: businessSetupIntegration,
     });
 
