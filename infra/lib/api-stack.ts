@@ -5,7 +5,7 @@ import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations
 import { HttpJwtAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
-import { APP_NAME } from "../constant";
+import { ALLOW_ORIGINS, APP_NAME } from "../constant";
 
 export interface ApiStackProps extends StackProps {
   userPool: cognito.UserPool;
@@ -13,7 +13,6 @@ export interface ApiStackProps extends StackProps {
   businessSetupFn: lambdaNode.NodejsFunction;
   productsFn: lambdaNode.NodejsFunction;
   ordersFn: lambdaNode.NodejsFunction;
-  imagesFn: lambdaNode.NodejsFunction;
   transactionsFn: lambdaNode.NodejsFunction;
   invoicesFn: lambdaNode.NodejsFunction;
 
@@ -39,7 +38,7 @@ export class ApiStack extends Stack {
         apiName: `${APP_NAME}-api-${props.stage}`,
         createDefaultStage: false,
         corsPreflight: {
-          allowOrigins: ["*"], // tighten once the app's origin(s) are known
+          allowOrigins: ALLOW_ORIGINS, // tighten once the app's origin(s) are known
           allowMethods: [apigwv2.CorsHttpMethod.ANY],
           allowHeaders: ["authorization", "content-type"],
         },
@@ -65,10 +64,7 @@ export class ApiStack extends Stack {
       "OrdersIntegration",
       props.ordersFn,
     );
-    const imagesIntegration = new HttpLambdaIntegration(
-      "ImagesIntegration",
-      props.imagesFn,
-    );
+
     const transactionsIntegration = new HttpLambdaIntegration(
       "transactionsIntegration",
       props.transactionsFn,

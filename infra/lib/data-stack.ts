@@ -1,17 +1,11 @@
-import {
-  Stack,
-  StackProps,
-  RemovalPolicy,
-  CfnOutput,
-  Duration,
-} from "aws-cdk-lib";
+import { Stack, StackProps, RemovalPolicy, Duration } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as cdk from "aws-cdk-lib";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
-import { APP_NAME } from "../constant";
+import { ALLOW_ORIGINS, APP_NAME } from "../constant";
 
 export interface DataStackProps extends StackProps {
   stage?: string;
@@ -23,9 +17,7 @@ export class DataStack extends Stack {
   public readonly transactionsTable: dynamodb.Table;
   public readonly invoicesTable: dynamodb.Table;
 
-  public readonly productsBucket: s3.Bucket;
   public readonly inventoryFlowBucket: s3.Bucket;
-  public readonly imagesDistribution: cloudfront.Distribution;
 
   constructor(scope: Construct, id: string, props: DataStackProps) {
     super(scope, id, props);
@@ -136,49 +128,20 @@ export class DataStack extends Stack {
       `${APP_NAME}-${props.stage}`,
       {
         bucketName: `${APP_NAME}-${props.stage}`, // let CDK generate a unique name
-
         blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-
         encryption: s3.BucketEncryption.S3_MANAGED,
-
         enforceSSL: true,
-
         versioned: true,
-
         removalPolicy: cdk.RemovalPolicy.RETAIN,
-      },
-    );
-
-    this.productsBucket = new s3.Bucket(
-      this,
-      `${APP_NAME}-productsBucket-${props.stage}`,
-      {
-        bucketName: `${APP_NAME}-products-${props.stage}`, // let CDK generate a unique name
-        removalPolicy: RemovalPolicy.RETAIN,
         cors: [
           {
-            allowedMethods: [s3.HttpMethods.PUT, s3.HttpMethods.GET],
-            allowedOrigins: ["*"], // tighten to your app's origin(s) once known
             allowedHeaders: ["*"],
+            allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT, s3.HttpMethods.HEAD],
+            allowedOrigins: ALLOW_ORIGINS,
+            exposedHeaders: ["ETag"],
             maxAge: 3000,
           },
         ],
-        lifecycleRules: [{ noncurrentVersionExpiration: Duration.days(30) }],
-      },
-    );
-
-    this.imagesDistribution = new cloudfront.Distribution(
-      this,
-      `ImagesDistribution-${props.stage}`,
-      {
-        defaultBehavior: {
-          origin: origins.S3BucketOrigin.withOriginAccessControl(
-            this.productsBucket,
-          ),
-          viewerProtocolPolicy:
-            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-        },
       },
     );
   }

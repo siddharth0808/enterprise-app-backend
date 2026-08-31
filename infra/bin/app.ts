@@ -33,7 +33,6 @@ const functions = new LambdaStack(app, `${APP_NAME}-lambda-${stage}`, {
   transactionsTable: data.transactionsTable,
   invoicesTable: data.invoicesTable,
   inventoryFlowBucket: data.inventoryFlowBucket,
-  productsBucket: data.productsBucket,
 });
 
 new ApiStack(app, `${APP_NAME}-api-${stage}`, {
@@ -44,7 +43,6 @@ new ApiStack(app, `${APP_NAME}-api-${stage}`, {
   businessSetupFn: functions.businessSetup,
   productsFn: functions.productsFn,
   ordersFn: functions.ordersFn,
-  imagesFn: functions.imagesFn,
   transactionsFn: functions.transactionsFn,
   invoicesFn: functions.invoicesFn,
 });

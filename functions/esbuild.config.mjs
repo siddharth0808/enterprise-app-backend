@@ -13,7 +13,6 @@ const handlers = {
   businessSetup: path.join(__dirname, 'businessSetup', 'handler.ts'),
   products: path.join(__dirname, 'products', 'handler.ts'),
   orders: path.join(__dirname, 'orders', 'handler.ts'),
-  images: path.join(__dirname, 'images', 'handler.ts'),
   transactions: path.join(__dirname, 'transactions', 'handler.ts'),
   invoices: path.join(__dirname, 'invoices', 'handler.ts'),
   invoicesProcesser: path.join(__dirname, 'invoicesProcesser', 'handler.ts'),
