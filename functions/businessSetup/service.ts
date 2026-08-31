@@ -63,14 +63,14 @@ export class BusinessService {
           ":updatedAt": new Date().toISOString(),
         },
       };
-      await this.ddbService.updateItems(
+      const response = await this.ddbService.updateItems(
         BUSINESS_TABLE,
         updateItems.Key,
         updateItems.UpdateExpression,
         updateItems.ExpressionAttributeNames,
         updateItems.ExpressionAttributeValues,
       );
-      return business;
+      return response;
     } catch (error: any) {
       throw Error(error.message);
     }
