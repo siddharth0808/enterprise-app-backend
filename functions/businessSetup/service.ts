@@ -51,8 +51,7 @@ export class BusinessService {
       if (!business) throw Error("Business not found!");
       const updateItems = {
         Key: {
-          ownerId,
-          id: business.id,
+          ownerId
         },
         UpdateExpression: `SET businessName = :businessName, email = :email, businessAddress = :businessAddress, mobile = :mobile, updatedAt = :updatedAt`,
         ExpressionAttributeNames: null,

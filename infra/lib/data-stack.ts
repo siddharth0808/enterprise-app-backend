@@ -37,7 +37,6 @@ export class DataStack extends Stack {
       {
         tableName: `${APP_NAME}-business-${props.stage}`,
         partitionKey: { name: "ownerId", type: dynamodb.AttributeType.STRING },
-        sortKey: { name: "id", type: dynamodb.AttributeType.STRING },
         billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
         removalPolicy: RemovalPolicy.RETAIN,
       },
