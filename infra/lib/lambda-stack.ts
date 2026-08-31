@@ -109,7 +109,7 @@ export class LambdaStack extends Stack {
     );
     props.productsTable.grantReadWriteData(this.transactionsFn);
     props.transactionsTable.grantReadWriteData(this.transactionsFn);
-    props.businessTable.grantReadData(this.invoicesFn);
+    props.businessTable.grantReadData(this.transactionsFn);
 
 
     this.invoicesProcesserFn = new lambda.Function(
