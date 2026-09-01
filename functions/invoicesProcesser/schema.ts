@@ -14,7 +14,7 @@ export const extractedInvoiceItemSchema = z.object({
   manufacturer: z.string().trim().min(0).optional(),
 
   batchNumber: z.string().trim().min(0).optional(),
-  expiryDate: z.string().trim().min(0).optional(),
+  expiryDate: z.any().optional(),
 
   hsn: z.string().trim().min(0).optional(),
 
