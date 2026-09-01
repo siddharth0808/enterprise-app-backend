@@ -23,7 +23,7 @@ export class ProductService {
       );
       return products;
     } catch (error: any) {
-      console.log(error.stack);
+      console.log("getProducts error:::::", error.stack);
       throw Error(error.message);
     }
   }
@@ -116,8 +116,8 @@ export class ProductService {
         updateItems.ExpressionAttributeNames,
         updateItems.ExpressionAttributeValues,
       );
-      console.log("Updated items:::", JSON.stringify(item))
-      return {...item, id:productId };
+      console.log("Updated items:::", JSON.stringify(item));
+      return { ...item, id: productId };
     } catch (error: any) {
       console.log(error.stack);
       throw Error(error.message);
@@ -152,18 +152,18 @@ export class ProductService {
             name: product.name,
             category: business.businessType,
             manufacturer: product.manufacturer,
-            rate: Number(product.rate),
-            mrp: Number(product.mrp),
+            rate: Number(product.rate || 0),
+            mrp: Number(product.mrp || 0),
             batchNumber: product.batchNumber,
-            hsn: product.hsn,
+            hsn: Number(product.hsn || 0),
             status: product.status,
-            amount: Number(product.amount),
-            currentStock: Number(product.quantity),
+            amount: Number(product.amount || 0),
+            currentStock: Number(product.quantity || 0),
             minimumStock: Number(product?.minimumStock || 0),
-            cgst: Number(product.cgst),
-            sgst: Number(product.sgst),
+            cgst: Number(product.cgst || 0),
+            sgst: Number(product.sgst || 0),
             expiryDate: formatExpiryDate(product.expiryDate || ""),
-            discount: Number(product.discount),
+            discount: Number(product.discount || 0),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };

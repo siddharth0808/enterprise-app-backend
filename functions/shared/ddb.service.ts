@@ -106,6 +106,7 @@ export class DynamoDBService {
       console.log("getAllItems::::::", JSON.stringify(resposne));
       return resposne.Items ? resposne.Items : [];
     } catch (error: any) {
+      console.log('getAllItems error:::::', error.stack)
       throw Error(error.message);
     }
   }

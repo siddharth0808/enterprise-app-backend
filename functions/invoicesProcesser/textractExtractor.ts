@@ -119,48 +119,49 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
       const value = field.ValueDetection?.Text?.trim();
       if (type === "OTHER") {
         const label = field.LabelDetection?.Text?.trim();
-        if(label && value)
-        otherValues[label.toUpperCase()] = value
+        if(label && value){
+        otherValues[label.toUpperCase()] = value.includes('\n') ?  value.split('\n')[0] : value
+        }
       }
       if (type && type !== "OTHER" && value) {
-        values[type] = value;
+        values[type] = value.includes('\n') ?  value.split('\n')[0] : value;
       }
     }
     values = { ...values, ...otherValues };
-
+    console.log("Values::::", JSON.stringify(values))
     const productName = values.ITEM || values.PRODUCT || values.DESCRIPTION;
-
-    const quantity = this.parseNumber(values.QUANTITY);
+    const pack =  values.PACK || values.PACKAGE || undefined;
+    const quantity = this.parseNumber(values.QUANTITY || 0);
 
     if (!productName || quantity === undefined) {
       return null;
     }
 
     return {
-      name:productName,
+      name: pack ? `${productName} ${pack}`: productName,
 
-      manufacturer: values.MANUFACTURER || values['MFG.'] || values['MFR.'],
+      manufacturer: values.MANUFACTURER ||values.MFR|| values['MFG.'] || values['MFR.'],
 
       batchNumber: values.BATCH_NUMBER || values.BATCH || values['BATCH NO.'],
 
-      expiryDate: values.EXPIRY_DATE || values.EXPIRY || values['EXP.'],
+      expiryDate: values.EXPIRY_DATE || values.EXPIRY || values.EXP ||values['EXP.'],
 
       hsn: values.HSN || values.PRODUCT_CODE,
 
       quantity,
 
-      mrp: this.parseNumber(values.MRP),
+      mrp: this.parseNumber(values.MRP || 0),
 
-      rate: this.parseNumber(values.RATE || values.UNIT_PRICE || values.PRICE),
+      rate: this.parseNumber(values.RATE || values.UNIT_PRICE || 0),
 
-      discount: this.parseNumber(values.DISCOUNT || values['DISC.']),
+      discount: this.parseNumber(values.DISCOUNT || values['DISC.'] || 0),
 
-      sgst: this.parseNumber(values.SGST),
+      sgst: this.parseNumber(values.SGST || 0),
 
-      cgst: this.parseNumber(values.CGST),
+      cgst: this.parseNumber(values.CGST || 0),
 
       amount: this.parseNumber(
-        values.AMOUNT || values.LINE_TOTAL || values.PRICE,
+        values.AMOUNT || values.LINE_TOTAL || values.PRICE || 0
       ),
     };
   }
