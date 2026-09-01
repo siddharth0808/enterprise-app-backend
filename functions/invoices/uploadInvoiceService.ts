@@ -280,7 +280,8 @@ export class UploadInvoiceService {
             id: existingProduct.id,
             status: "EXISTING",
             currentQuantity: existingProduct.currentStock,
-            amount: Number(existingProduct.amount) + Number(product.amount)
+            amount: Number(existingProduct.amount) + Number(product.amount),
+            expiryDate: product.expiryDate ? product.expiryDate : existingProduct.expiryDate
           };
         });
       }

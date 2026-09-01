@@ -143,6 +143,7 @@ export class ProductService {
         (product: ExtractedInvoiceItem) => product.status === "EXISTING",
       );
       let items: any;
+      console.log("New products::::::::::::::::", JSON.stringify(newProducts))
       if (newProducts.length) {
         items = newProducts.map((product: ExtractedInvoiceItem) => {
           return {
@@ -162,14 +163,18 @@ export class ProductService {
             minimumStock: Number(product?.minimumStock || 0),
             cgst: Number(product.cgst || 0),
             sgst: Number(product.sgst || 0),
-            expiryDate: formatExpiryDate(product.expiryDate || ""),
+            expiryDate: product.expiryDate ? new Date(product.expiryDate).valueOf() : product.expiryDate,
             discount: Number(product.discount || 0),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
         });
+      console.log("New products items::::::::::::::::", JSON.stringify(items))
+
         await this.ddbService.batchWriteItems(PRODUCTS_TABLE, items);
       }
+      console.log("Existing products::::::::::::::::", JSON.stringify(existingProducts))
+
       if (existingProducts.length) {
         items = existingProducts.map((product: ExtractedInvoiceItem) => {
           return {
