@@ -216,10 +216,12 @@ export class ProductService {
         ownerId,
       );
       if (!business) throw Error("Business not found!");
-      const products = await this.ddbService.getAllItems(
+      const products = await this.ddbService.deleteItem(
         PRODUCTS_TABLE,
-        `businessId = :businessId`,
-        { ":businessId": business.id },
+        {
+          businessId: business.id,
+          id
+        }
       );
       return products;
     } catch (error: any) {
