@@ -12,7 +12,7 @@ export interface ExtractedInvoiceItem {
   manufacturer?: string;
 
   batchNumber?: string;
-  expiryDate?: string;
+  expiryDate?: any;
 
   hsn?: string;
 

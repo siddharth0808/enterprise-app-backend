@@ -28,10 +28,13 @@ export function getExtension(fileName: string, contentType: string): string {
 }
 
 export function formatExpiryDate(date: string) {
-  const [month, year] = date.split("/");
-
-  const fullDate = new Date(2000 + Number(year), Number(month) - 1, 1).valueOf();
-
-  return fullDate
+  if(date.includes('/')){
+    const [month, year] = date.split("/");
+  
+    const fullDate = new Date(2000 + Number(year), Number(month) - 1, 1).valueOf();
+  
+    return fullDate
+  }
+  return date ? new Date(date).valueOf() :'';
 }
 

@@ -11,12 +11,12 @@ export const extractedInvoiceSupplierSchema = z.object({
 export const extractedInvoiceItemSchema = z.object({
   name: z.string().trim().min(1),
 
-  manufacturer: z.string().trim().min(1).optional(),
+  manufacturer: z.string().trim().min(0).optional(),
 
-  batchNumber: z.string().trim().min(1).optional(),
-  expiryDate: z.string().trim().min(1).optional(),
+  batchNumber: z.string().trim().min(0).optional(),
+  expiryDate: z.string().trim().min(0).optional(),
 
-  hsn: z.string().trim().min(1).optional(),
+  hsn: z.string().trim().min(0).optional(),
 
   quantity: z.number().positive(),
 

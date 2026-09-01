@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/client-textract";
 import { InvoiceExtractor } from "./interface";
 import { ExtractedInvoice } from "./types";
+import { formatExpiryDate } from "../shared/utils";
 export class TextractInvoiceExtractor implements InvoiceExtractor {
   private readonly textract = new TextractClient({});
 
@@ -140,28 +141,28 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
     return {
       name: pack ? `${productName} ${pack}`: productName,
 
-      manufacturer: values.MANUFACTURER ||values.MFR|| values['MFG.'] || values['MFR.'],
+      manufacturer: values.MANUFACTURER ||values.MFR|| values['MFG.'] || values['MFR.'] || '',
 
-      batchNumber: values.BATCH_NUMBER || values.BATCH || values['BATCH NO.'],
+      batchNumber: values.BATCH_NUMBER || values.BATCH || values['BATCH NO.'] || '',
 
-      expiryDate: values.EXPIRY_DATE || values.EXPIRY || values.EXP ||values['EXP.'],
+      expiryDate: formatExpiryDate(values.EXPIRY_DATE || values.EXPIRY || values.EXP || values['EXP.'] || ''),
 
-      hsn: values.HSN || values.PRODUCT_CODE,
+      hsn: values.HSN || values.PRODUCT_CODE || "0",
 
       quantity,
 
-      mrp: this.parseNumber(values.MRP || 0),
+      mrp: this.parseNumber(values.MRP || "0"),
 
-      rate: this.parseNumber(values.RATE || values.UNIT_PRICE || 0),
+      rate: this.parseNumber(values.RATE || values.UNIT_PRICE || "0"),
 
-      discount: this.parseNumber(values.DISCOUNT || values['DISC.'] || 0),
+      discount: this.parseNumber(values.DISCOUNT || values['DISC.'] || "0"),
 
-      sgst: this.parseNumber(values.SGST || 0),
+      sgst: this.parseNumber(values.SGST || "0"),
 
-      cgst: this.parseNumber(values.CGST || 0),
+      cgst: this.parseNumber(values.CGST || "0"),
 
       amount: this.parseNumber(
-        values.AMOUNT || values.LINE_TOTAL || values.PRICE || 0
+        values.AMOUNT || values.LINE_TOTAL || values.PRICE || "0"
       ),
     };
   }
