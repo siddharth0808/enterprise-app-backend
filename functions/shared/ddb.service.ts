@@ -7,6 +7,7 @@ import {
   QueryCommand,
   BatchWriteCommand,
   BatchWriteCommandInput,
+  DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { UpdateItem } from "./types";
 
@@ -58,6 +59,21 @@ export class DynamoDBService {
       );
       console.log("getItem::::::", JSON.stringify(resposne));
       return resposne.Item ? resposne.Item : {};
+    } catch (error: any) {
+      throw Error(error.message);
+    }
+  }
+
+  public async deleteItem(tableName: string, Key: any) {
+    try {
+      const resposne = await ddb.send(
+        new DeleteCommand({
+          TableName: tableName,
+          Key,
+        }),
+      );
+      console.log("deleteItem::::::", JSON.stringify(resposne));
+      return resposne.Attributes ? resposne.Attributes : {};
     } catch (error: any) {
       throw Error(error.message);
     }

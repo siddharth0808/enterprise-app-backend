@@ -143,11 +143,11 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
 
       manufacturer: values.MANUFACTURER ||values.MFR|| values['MFG.'] || values['MFR.'] || '',
 
-      batchNumber: values.BATCH_NUMBER || values.BATCH || values['BATCH NO.'] || '',
+      batchNumber: values.BATCH_NUMBER || values.BATCH || values['BATCH NO.'] || values.PRODUCT_CODE || '',
 
       expiryDate: formatExpiryDate(values.EXPIRY_DATE || values.EXPIRY || values.EXP || values['EXP.'] || ''),
 
-      hsn: values.HSN || values.PRODUCT_CODE || "0",
+      hsn: values.HSN || "0",
 
       quantity,
 

@@ -46,6 +46,12 @@ export const handler = async (
     return json(200, item);
   }
 
+  if (method === "DELETE") {
+      const { id }: any = event.pathParameters;
+    const item = await service.deleteProduct(sub, id);
+    return json(200, item);
+  }
+
   if (method === "GET") {
     const result = await service.getProducts(sub);
     return json(200, result);

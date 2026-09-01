@@ -234,6 +234,7 @@ export class UploadInvoiceService {
       const productNames = invoiceProducts.map(
         (product: ExtractedInvoiceItem) => product.name,
       );
+      console.log("invoice productNames:::::", JSON.stringify(productNames))
       const existingProducts = await Promise.all(
         productNames.map((name) =>
           this.ddbService.getItemsByIndex(
@@ -275,13 +276,19 @@ export class UploadInvoiceService {
           const existingProduct = flatedExisitngProducts.find(
             (e: any) => e.name === product.name,
           );
-          return {
+          console.log("existingProduct::::::::::::::::::", existingProduct)
+          return existingProduct?.id ? {
             ...product,
-            id: existingProduct.id,
+            id: existingProduct?.id ,
             status: "EXISTING",
             currentQuantity: existingProduct.currentStock,
             amount: Number(existingProduct.amount) + Number(product.amount),
             expiryDate: product.expiryDate ? product.expiryDate : existingProduct.expiryDate
+          } : {
+            ...product,
+            id: randomUUID(),
+            status: "NEW",
+            currentQuantity: 0,
           };
         });
       }

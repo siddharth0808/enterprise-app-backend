@@ -142,7 +142,7 @@ export class ProductService {
       const existingProducts = products.filter(
         (product: ExtractedInvoiceItem) => product.status === "EXISTING",
       );
-      let items: any;
+      let items: any =[];
       console.log("New products::::::::::::::::", JSON.stringify(newProducts))
       if (newProducts.length) {
         items = newProducts.map((product: ExtractedInvoiceItem) => {
@@ -152,19 +152,19 @@ export class ProductService {
             businessId: business.id,
             name: product.name,
             category: business.businessType,
-            manufacturer: product.manufacturer,
+            manufacturer: product?.manufacturer || '',
             rate: Number(product.rate || 0),
             mrp: Number(product.mrp || 0),
             batchNumber: product.batchNumber,
-            hsn: Number(product.hsn || 0),
+            hsn: product?.hsn || "",
             status: product.status,
-            amount: Number(product.amount || 0),
+            amount: Number(product?.amount || 0),
             currentStock: Number(product.quantity || 0),
             minimumStock: Number(product?.minimumStock || 0),
-            cgst: Number(product.cgst || 0),
-            sgst: Number(product.sgst || 0),
+            cgst: Number(product?.cgst || 0),
+            sgst: Number(product?.sgst || 0),
             expiryDate: product.expiryDate ? new Date(product.expiryDate).valueOf() : product.expiryDate,
-            discount: Number(product.discount || 0),
+            discount: Number(product?.discount || 0),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
@@ -176,7 +176,7 @@ export class ProductService {
       console.log("Existing products::::::::::::::::", JSON.stringify(existingProducts))
 
       if (existingProducts.length) {
-        items = existingProducts.map((product: ExtractedInvoiceItem) => {
+        const updateItems = existingProducts.map((product: ExtractedInvoiceItem) => {
           return {
             Key: {
               businessId: business.id,
@@ -199,12 +199,31 @@ export class ProductService {
           };
         });
 
-        await this.ddbService.batchUpdateItems(PRODUCTS_TABLE, items);
-        items = existingProducts;
+        await this.ddbService.batchUpdateItems(PRODUCTS_TABLE, updateItems);
+        items = [...items, ...existingProducts];
       }
       return items;
     } catch (error: any) {
       console.log(error.stack);
+      throw Error(error.message);
+    }
+  }
+
+   public async deleteProduct(ownerId: string, id:string) {
+    try {
+      const business = await this.ddbService.getBusinessByOwnerId(
+        BUSINESS_TABLE,
+        ownerId,
+      );
+      if (!business) throw Error("Business not found!");
+      const products = await this.ddbService.getAllItems(
+        PRODUCTS_TABLE,
+        `businessId = :businessId`,
+        { ":businessId": business.id },
+      );
+      return products;
+    } catch (error: any) {
+      console.log("getProducts error:::::", error.stack);
       throw Error(error.message);
     }
   }
