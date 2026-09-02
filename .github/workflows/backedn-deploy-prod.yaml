@@ -59,6 +59,10 @@ jobs:
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
+      
+      - name: Bootstrap CDK Production
+        working-directory: infra
+        run: npx cdk bootstrap aws://814203451617/us-east-1 --context stage=prod
 
       - name: Deploy to Production
         working-directory: infra
