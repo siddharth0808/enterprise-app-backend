@@ -26,9 +26,8 @@ export class AuthStack extends Stack {
         signInAliases: { email: true },
         autoVerify: { email: true }, // enable SNS/SES verification later if desired
         standardAttributes: {
-          phoneNumber: { required: true, mutable: false },
           email: { required: true, mutable: false },
-          fullname: { required: true, mutable: true },
+          givenName: { required: true, mutable: false },
         },
         customAttributes: {
           role: new cognito.StringAttribute({ mutable: false }),

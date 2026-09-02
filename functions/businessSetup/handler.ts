@@ -1,33 +1,50 @@
-import { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { json, getClaims } from '../shared/http';
-import { Business } from '../shared/types';
+import { APIGatewayProxyEventV2WithJWTAuthorizer } from "aws-lambda";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  PutCommand,
+} from "@aws-sdk/lib-dynamodb";
+import { json, getClaims } from "../shared/http";
+import { Business } from "../shared/types";
+import { randomUUID } from "crypto";
+import { BusinessService } from "./service";
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
 
 // Cognito already created the user account (sign-up happens client-side against
-// the User Pool). 
-export const handler = async (event: APIGatewayProxyEventV2WithJWTAuthorizer) => {
+// the User Pool).
+export const handler = async (
+  event: APIGatewayProxyEventV2WithJWTAuthorizer,
+) => {
+  const method = event.requestContext.http.method;
   const { sub } = getClaims(event);
-  const body = JSON.parse(event.body ?? '{}');
+  const body = JSON.parse(event.body ?? "{}");
+  const service =  new BusinessService()
+  if (method === "POST") {
+    const required = ["name", "ownerName", "email", "address", "phone", "businessType"];
+    const missing = required.filter((field) => !body[field]);
+    if (missing.length) {
+      return json(400, { message: `Missing fields: ${missing.join(", ")}` });
+    }
 
-  const required = ['businessName', 'ownerName', 'email', 'businessAddress', 'ownerMobile'];
-  const missing = required.filter((field) => !body[field]);
-  if (missing.length) {
-    return json(400, { message: `Missing fields: ${missing.join(', ')}` });
+    const business =  await service.setUpBusiness(sub, body);
+    return json(201, business);
   }
 
-  const business: Business = {
-    ownerId: sub,
-    businessName: body.businessName,
-    ownerName: body.ownerName,
-    email: body.email,
-    businessAddress: body.businessAddress,
-    ownerMobile: body.ownerMobile,
-  };
+  if (method === "PATCH") {
+    const required = ["name", "email", "address", "phone"];
+    const missing = required.filter((field) => !body[field]);
+    if (missing.length) {
+      return json(400, { message: `Missing fields: ${missing.join(", ")}` });
+    }
+    const business =  await service.updateBusiness(sub, body)
+    return json(201, business);
+  }
 
-  await ddb.send(new PutCommand({ TableName: BUSINESS_TABLE, Item: business }));
-  return json(201, business);
+  if (method === "GET") {
+    const result =await service.getBusiness(sub)
+    return json(200, result ?? []);
+  }
 };

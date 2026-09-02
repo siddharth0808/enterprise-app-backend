@@ -1,51 +1,61 @@
-import { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
-import { randomUUID } from 'crypto';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { json, getClaims } from '../shared/http';
-import { Products } from '../shared/types';
+import { APIGatewayProxyEventV2WithJWTAuthorizer } from "aws-lambda";
+import { json, getClaims } from "../shared/http";
+import { ProductService } from "./service";
 
-const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE!;
+export const handler = async (
+  event: APIGatewayProxyEventV2WithJWTAuthorizer,
+) => {
+  console.log("EVENT::::", JSON.stringify(event));
 
-
-export const handler = async (event: APIGatewayProxyEventV2WithJWTAuthorizer) => {
   const method = event.requestContext.http.method;
+  const path = event.requestContext.http.path;
+  const { sub } = getClaims(event);
 
-  if (method === 'POST') {
-    const { sub } = getClaims(event);
-    const body = JSON.parse(event.body ?? '{}');
 
-    if (!body.productName || body.productPrice == null) {
-      return json(400, { message: 'productName and productPrice are required' });
-    }
+  const service = new ProductService();
 
-    const item: Products = {
-      ownerId: sub,
-      productId: randomUUID(),
-      productName: body.productName,
-      productPrice: Number(body.productPrice),
-      productImgUri: body.productImgUri ?? '',
-      productDescription: body.productDescription ?? '',
-    };
-
-    await ddb.send(new PutCommand({ TableName: PRODUCTS_TABLE, Item: item }));
+  if (method === "POST" && path.includes('/import')) {
+    const products = JSON.parse(event.body ?? "[]");
+    if(!products.length) return json(400, 'No products in payload!')
+    const item = await service.importProducts(sub, products);
     return json(201, item);
   }
 
-  if (method === 'GET') {
-    const ownerId = event.pathParameters?.ownerId;
-    if (!ownerId) return json(400, { message: 'ownerId is required' });
-
-    const result = await ddb.send(
-      new QueryCommand({
-        TableName: PRODUCTS_TABLE,
-        KeyConditionExpression: 'ownerId = :ownerId',
-        ExpressionAttributeValues: { ':ownerId': ownerId },
-      })
-    );
-    return json(200, result.Items ?? []);
+  if (method === "POST") {
+    const body = JSON.parse(event.body ?? "{}");
+    const required = ["name", "mrp", "rate", "currentStock", "expiryDate"];
+    const missing = required.filter((field) => !body[field]);
+    if (missing.length) {
+      return json(400, { message: `Missing fields: ${missing.join(", ")}` });
+    }
+    const item = await service.createProduct(sub, body);
+    return json(201, item);
   }
 
-  return json(405, { message: 'Method not allowed' });
+  if (method === "PATCH") {
+      const { id }: any = event.pathParameters;
+
+    const body = JSON.parse(event.body ?? "{}");
+    const required = ["name", "mrp", "rate", "expiryDate"];
+
+    const missing = required.filter((field) => !body[field]);
+    if (missing.length) {
+      return json(400, { message: `Missing fields: ${missing.join(", ")}` });
+    }
+    const item = await service.updateProduct(sub, id, body);
+    return json(200, item);
+  }
+
+  if (method === "DELETE") {
+      const { id }: any = event.pathParameters;
+    const item = await service.deleteProduct(sub, id);
+    return json(200, item);
+  }
+
+  if (method === "GET") {
+    const result = await service.getProducts(sub);
+    return json(200, result);
+  }
+
+  return json(405, { message: "Method not allowed" });
 };

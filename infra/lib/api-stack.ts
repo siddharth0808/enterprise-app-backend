@@ -5,7 +5,7 @@ import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations
 import { HttpJwtAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
-import { APP_NAME } from "../constant";
+import { ALLOW_ORIGINS, APP_NAME } from "../constant";
 
 export interface ApiStackProps extends StackProps {
   userPool: cognito.UserPool;
@@ -13,7 +13,9 @@ export interface ApiStackProps extends StackProps {
   businessSetupFn: lambdaNode.NodejsFunction;
   productsFn: lambdaNode.NodejsFunction;
   ordersFn: lambdaNode.NodejsFunction;
-  imagesFn: lambdaNode.NodejsFunction;
+  transactionsFn: lambdaNode.NodejsFunction;
+  invoicesFn: lambdaNode.NodejsFunction;
+
   stage?: string;
 }
 
@@ -34,15 +36,21 @@ export class ApiStack extends Stack {
       `${APP_NAME}-api-${props.stage}`,
       {
         apiName: `${APP_NAME}-api-${props.stage}`,
-
+        createDefaultStage: false,
         corsPreflight: {
-          allowOrigins: ["*"], // tighten once the app's origin(s) are known
+          allowOrigins: ALLOW_ORIGINS, // tighten once the app's origin(s) are known
           allowMethods: [apigwv2.CorsHttpMethod.ANY],
           allowHeaders: ["authorization", "content-type"],
         },
         defaultAuthorizer: authorizer,
       },
     );
+
+    new apigwv2.HttpStage(this, `${APP_NAME}-stage-${props.stage}`, {
+      httpApi,
+      stageName: props.stage,
+      autoDeploy: true,
+    });
 
     const businessSetupIntegration = new HttpLambdaIntegration(
       "BusinessSetupIntegration",
@@ -56,48 +64,63 @@ export class ApiStack extends Stack {
       "OrdersIntegration",
       props.ordersFn,
     );
-    const imagesIntegration = new HttpLambdaIntegration(
-      "ImagesIntegration",
-      props.imagesFn,
+
+    const transactionsIntegration = new HttpLambdaIntegration(
+      "transactionsIntegration",
+      props.transactionsFn,
+    );
+
+    const invoicesIntegration = new HttpLambdaIntegration(
+      "invoicesIntegration",
+      props.invoicesFn,
     );
 
     httpApi.addRoutes({
-      path: "/business/setup",
-      methods: [apigwv2.HttpMethod.POST],
+      path: "/business",
+      methods: [apigwv2.HttpMethod.POST,apigwv2.HttpMethod.PATCH, apigwv2.HttpMethod.GET],
       integration: businessSetupIntegration,
     });
 
     httpApi.addRoutes({
       path: "/products",
-      methods: [apigwv2.HttpMethod.POST],
-      integration: productsIntegration,
-    });
-    httpApi.addRoutes({
-      path: "/products/{ownerId}",
-      methods: [apigwv2.HttpMethod.GET],
+      methods: [apigwv2.HttpMethod.POST, apigwv2.HttpMethod.GET],
       integration: productsIntegration,
     });
 
     httpApi.addRoutes({
-      path: "/orders",
-      methods: [apigwv2.HttpMethod.POST],
-      integration: ordersIntegration,
-    });
-    httpApi.addRoutes({
-      path: "/orders/{ownerId}",
-      methods: [apigwv2.HttpMethod.GET],
-      integration: ordersIntegration,
-    });
-    httpApi.addRoutes({
-      path: "/orders/{ownerId}/{orderId}/status",
-      methods: [apigwv2.HttpMethod.PATCH],
-      integration: ordersIntegration,
+      path: "/products/{id}",
+      methods: [apigwv2.HttpMethod.PATCH, apigwv2.HttpMethod.DELETE],
+      integration: productsIntegration,
     });
 
     httpApi.addRoutes({
-      path: "/images/presign",
+      path: "/products/import",
       methods: [apigwv2.HttpMethod.POST],
-      integration: imagesIntegration,
+      integration: productsIntegration,
+    });
+
+    httpApi.addRoutes({
+      path: "/inventory/{productId}/transactions",
+      methods: [apigwv2.HttpMethod.POST, apigwv2.HttpMethod.GET],
+      integration: transactionsIntegration,
+    });
+
+    httpApi.addRoutes({
+      path: "/invoices",
+      methods: [apigwv2.HttpMethod.POST],
+      integration: invoicesIntegration,
+    });
+
+    httpApi.addRoutes({
+      path: "/invoices/{invoiceId}/status",
+      methods: [apigwv2.HttpMethod.POST,apigwv2.HttpMethod.GET],
+      integration: invoicesIntegration,
+    });
+
+    httpApi.addRoutes({
+      path: "/invoices/{invoiceId}/review",
+      methods: [apigwv2.HttpMethod.GET],
+      integration: invoicesIntegration,
     });
 
     new CfnOutput(this, "ApiUrl", { value: httpApi.apiEndpoint });

@@ -4,16 +4,19 @@
   "private": true,
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.500.0",
-    "@aws-sdk/lib-dynamodb": "^3.500.0",
+    "@aws-sdk/client-lambda": "^3.1118.0",
     "@aws-sdk/client-s3": "^3.500.0",
-    "@aws-sdk/s3-request-presigner": "^3.500.0"
+    "@aws-sdk/client-textract": "^3.1118.0",
+    "@aws-sdk/lib-dynamodb": "^3.500.0",
+    "@aws-sdk/s3-request-presigner": "^3.500.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.130",
     "@types/node": "^20.19.43",
-    "esbuild": "^0.28.1"
-  }
-  ,
+    "esbuild": "^0.28.1",
+    "typescript": "^7.0.2"
+  },
   "scripts": {
     "build": "node esbuild.config.mjs"
   }
