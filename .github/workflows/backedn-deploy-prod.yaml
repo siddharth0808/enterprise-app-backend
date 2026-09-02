@@ -19,6 +19,7 @@ jobs:
       contents: read
 
     steps:
+        
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -46,6 +47,9 @@ jobs:
           echo "Ref: $GITHUB_REF"
           echo "Branch: $GITHUB_REF_NAME"
           echo "Event: $GITHUB_EVENT_NAME"
+          
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
