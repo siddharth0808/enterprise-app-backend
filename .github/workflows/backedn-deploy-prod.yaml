@@ -3,7 +3,7 @@ name: Goods Wise Backend Deploy Production
 on:
   push:
     branches:
-      - 'main'
+      - 'master'
 
 jobs:
   deploy:
