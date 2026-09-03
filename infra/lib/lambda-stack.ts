@@ -17,7 +17,11 @@ export interface LambdaStackProps extends StackProps {
   stage?: string;
 }
 
+type DynamoDbAccess = "read" | "readWrite";
+type S3Access = "read" | "put" | "readWrite";
+
 export class LambdaStack extends Stack {
+  private readonly stage?: string;
   public readonly businessSetup: lambda.Function;
   public readonly productsFn: lambda.Function;
   public readonly ordersFn: lambda.Function;
@@ -27,125 +31,140 @@ export class LambdaStack extends Stack {
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
+    this.stage = props.stage;
 
-    const commonProps = {
+    this.businessSetup = this.createLambda(
+      "businessSetup",
+      "../backend/dist/businessSetup",
+      { BUSINESS_TABLE: props.businessTable.tableName },
+    );
+    this.grantDynamoDb(this.businessSetup, props.businessTable, "readWrite");
+
+    this.productsFn = this.createLambda(
+      "productsFn",
+      "../backend/dist/products",
+      {
+        PRODUCTS_TABLE: props.productsTable.tableName,
+        BUSINESS_TABLE: props.businessTable.tableName,
+      },
+    );
+    this.grantDynamoDb(this.productsFn, props.productsTable, "readWrite");
+    this.grantDynamoDb(this.productsFn, props.businessTable, "readWrite");
+
+    this.ordersFn = this.createLambda(
+      "ordersFn",
+      "../backend/dist/orders",
+      { ORDERS_TABLE: props.ordersTable.tableName },
+    );
+    this.grantDynamoDb(this.ordersFn, props.ordersTable, "readWrite");
+
+    this.transactionsFn = this.createLambda(
+      "transactionsFn",
+      "../backend/dist/transactions",
+      {
+        PRODUCTS_TABLE: props.productsTable.tableName,
+        TRANSACTIONS_TABLE: props.transactionsTable.tableName,
+        BUSINESS_TABLE: props.businessTable.tableName,
+      },
+    );
+    this.grantDynamoDb(this.transactionsFn, props.productsTable, "readWrite");
+    this.grantDynamoDb(
+      this.transactionsFn,
+      props.transactionsTable,
+      "readWrite",
+    );
+    this.grantDynamoDb(this.transactionsFn, props.businessTable, "read");
+
+    this.invoicesProcesserFn = this.createLambda(
+      "invoicesProcesserFn",
+      "../backend/dist/invoicesProcesser",
+      {
+        INVOICES_TABLE: props.invoicesTable.tableName,
+        INVOICE_BUCKET: props.inventoryFlowBucket.bucketName,
+      },
+      { timeout: Duration.minutes(15) },
+    );
+    this.grantDynamoDb(
+      this.invoicesProcesserFn,
+      props.invoicesTable,
+      "readWrite",
+    );
+    this.grantS3(this.invoicesProcesserFn, props.inventoryFlowBucket, "read");
+    this.grantTextract(this.invoicesProcesserFn);
+
+    this.invoicesFn = this.createLambda(
+      "invoicesFn",
+      "../backend/dist/invoices",
+      {
+        INVOICES_TABLE: props.invoicesTable.tableName,
+        BUSINESS_TABLE: props.businessTable.tableName,
+        INVOICE_BUCKET: props.inventoryFlowBucket.bucketName,
+        INVOICES_PROCESSER_FUNCTION_NAME:
+          this.invoicesProcesserFn.functionName,
+        PRODUCTS_TABLE: props.productsTable.tableName,
+      },
+    );
+    this.grantDynamoDb(this.invoicesFn, props.businessTable, "readWrite");
+    this.grantDynamoDb(this.invoicesFn, props.invoicesTable, "readWrite");
+    this.grantS3(this.invoicesFn, props.inventoryFlowBucket, "readWrite");
+    this.grantDynamoDb(this.invoicesFn, props.productsTable, "read");
+
+    this.invoicesProcesserFn.grantInvoke(this.invoicesFn);
+  }
+
+  private createLambda(
+    name: string,
+    codePath: string,
+    environment: Record<string, string>,
+    options: Pick<lambda.FunctionProps, "timeout"> = {},
+  ): lambda.Function {
+    const functionName = `${APP_NAME}-${name}-${this.stage}`;
+
+    return new lambda.Function(this, functionName, {
       runtime: lambda.Runtime.NODEJS_24_X,
       timeout: Duration.seconds(10),
       memorySize: 256,
-    };
+      ...options,
+      functionName,
+      code: lambda.Code.fromAsset(codePath),
+      handler: "index.handler",
+      environment,
+    });
+  }
 
-    this.businessSetup = new lambda.Function(
-      this,
-      `${APP_NAME}-businessSetup-${props.stage}`,
-      {
-        ...commonProps,
-        functionName: `${APP_NAME}-businessSetup-${props.stage}`,
-        code: lambda.Code.fromAsset("../backend/dist/businessSetup"),
-        handler: "index.handler",
-        environment: { BUSINESS_TABLE: props.businessTable.tableName },
-      },
-    );
-    props.businessTable.grantReadWriteData(this.businessSetup);
+  private grantDynamoDb(
+    fn: lambda.Function,
+    table: dynamodb.Table,
+    access: DynamoDbAccess,
+  ): void {
+    if (access === "readWrite") {
+      table.grantReadWriteData(fn);
+      return;
+    }
 
-    this.productsFn = new lambda.Function(
-      this,
-      `${APP_NAME}-productsFn-${props.stage}`,
-      {
-        ...commonProps,
-        functionName: `${APP_NAME}-productsFn-${props.stage}`,
-        code: lambda.Code.fromAsset("../backend/dist/products"),
-        handler: "index.handler",
-        environment: {
-          PRODUCTS_TABLE: props.productsTable.tableName,
-          BUSINESS_TABLE: props.businessTable.tableName,
-        },
-      },
-    );
-    props.productsTable.grantReadWriteData(this.productsFn);
-    props.businessTable.grantReadWriteData(this.productsFn);
+    table.grantReadData(fn);
+  }
 
-    this.ordersFn = new lambda.Function(
-      this,
-      `${APP_NAME}-ordersFn-${props.stage}`,
-      {
-        ...commonProps,
-        functionName: `${APP_NAME}-ordersFn-${props.stage}`,
-        code: lambda.Code.fromAsset("../backend/dist/orders"),
-        handler: "index.handler",
-        environment: { ORDERS_TABLE: props.ordersTable.tableName },
-      },
-    );
-    props.ordersTable.grantReadWriteData(this.ordersFn);
+  private grantS3(
+    fn: lambda.Function,
+    bucket: s3.Bucket,
+    access: S3Access,
+  ): void {
+    if (access === "read" || access === "readWrite") {
+      bucket.grantRead(fn);
+    }
+    if (access === "put" || access === "readWrite") {
+      bucket.grantPut(fn);
+    }
+  }
 
-    this.transactionsFn = new lambda.Function(
-      this,
-      `${APP_NAME}-transactionsFn-${props.stage}`,
-      {
-        ...commonProps,
-        functionName: `${APP_NAME}-transactionsFn-${props.stage}`,
-        code: lambda.Code.fromAsset("../backend/dist/transactions"),
-        handler: "index.handler",
-        environment: {
-          PRODUCTS_TABLE: props.productsTable.tableName,
-          TRANSACTIONS_TABLE: props.transactionsTable.tableName,
-          BUSINESS_TABLE: props.businessTable.tableName
-        },
-      },
-    );
-    props.productsTable.grantReadWriteData(this.transactionsFn);
-    props.transactionsTable.grantReadWriteData(this.transactionsFn);
-    props.businessTable.grantReadData(this.transactionsFn);
-
-
-    this.invoicesProcesserFn = new lambda.Function(
-      this,
-      `${APP_NAME}-invoicesProcesserFn-${props.stage}`,
-      {
-        ...commonProps,
-        functionName: `${APP_NAME}-invoicesProcesserFn-${props.stage}`,
-        code: lambda.Code.fromAsset("../backend/dist/invoicesProcesser"),
-        handler: "index.handler",
-        timeout: Duration.minutes(15),
-        environment: {
-          INVOICES_TABLE: props.invoicesTable.tableName,
-          INVOICE_BUCKET: props.inventoryFlowBucket.bucketName,
-        },
-      },
-    );
-    props.invoicesTable.grantReadWriteData(this.invoicesProcesserFn);
-    props.inventoryFlowBucket.grantRead(this.invoicesProcesserFn);
-    this.invoicesProcesserFn.addToRolePolicy(
+  private grantTextract(fn: lambda.Function): void {
+    fn.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ["textract:AnalyzeExpense"],
         resources: ["*"],
       }),
     );
-
-    this.invoicesFn = new lambda.Function(
-      this,
-      `${APP_NAME}-invoicesFn-${props.stage}`,
-      {
-        ...commonProps,
-        functionName: `${APP_NAME}-invoicesFn-${props.stage}`,
-        code: lambda.Code.fromAsset("../backend/dist/invoices"),
-        handler: "index.handler",
-        environment: {
-          INVOICES_TABLE: props.invoicesTable.tableName,
-          BUSINESS_TABLE: props.businessTable.tableName,
-          INVOICE_BUCKET: props.inventoryFlowBucket.bucketName,
-          INVOICES_PROCESSER_FUNCTION_NAME:
-            this.invoicesProcesserFn.functionName,
-          PRODUCTS_TABLE: props.productsTable.tableName,
-        },
-      },
-    );
-    props.businessTable.grantReadWriteData(this.invoicesFn);
-    props.invoicesTable.grantReadWriteData(this.invoicesFn);
-    props.inventoryFlowBucket.grantPut(this.invoicesFn);
-    props.inventoryFlowBucket.grantRead(this.invoicesFn);
-    props.productsTable.grantReadData(this.invoicesFn);
-
-    this.invoicesProcesserFn.grantInvoke(this.invoicesFn);
   }
 }
