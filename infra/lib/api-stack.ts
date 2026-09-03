@@ -19,6 +19,22 @@ export interface ApiStackProps extends StackProps {
   stage?: string;
 }
 
+function createIntegration(
+  id: string,
+  fn: lambdaNode.NodejsFunction,
+): HttpLambdaIntegration {
+  return new HttpLambdaIntegration(id, fn);
+}
+
+function addRoute(
+  httpApi: apigwv2.HttpApi,
+  path: string,
+  methods: apigwv2.HttpMethod[],
+  integration: HttpLambdaIntegration,
+): void {
+  httpApi.addRoutes({ path, methods, integration });
+}
+
 export class ApiStack extends Stack {
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
@@ -52,76 +68,79 @@ export class ApiStack extends Stack {
       autoDeploy: true,
     });
 
-    const businessSetupIntegration = new HttpLambdaIntegration(
+    const businessSetupIntegration = createIntegration(
       "BusinessSetupIntegration",
       props.businessSetupFn,
     );
-    const productsIntegration = new HttpLambdaIntegration(
+    const productsIntegration = createIntegration(
       "ProductsIntegration",
       props.productsFn,
     );
-    const ordersIntegration = new HttpLambdaIntegration(
+    const ordersIntegration = createIntegration(
       "OrdersIntegration",
       props.ordersFn,
     );
-
-    const transactionsIntegration = new HttpLambdaIntegration(
+    const transactionsIntegration = createIntegration(
       "transactionsIntegration",
       props.transactionsFn,
     );
-
-    const invoicesIntegration = new HttpLambdaIntegration(
+    const invoicesIntegration = createIntegration(
       "invoicesIntegration",
       props.invoicesFn,
     );
 
-    httpApi.addRoutes({
-      path: "/business",
-      methods: [apigwv2.HttpMethod.POST,apigwv2.HttpMethod.PATCH, apigwv2.HttpMethod.GET],
-      integration: businessSetupIntegration,
-    });
-
-    httpApi.addRoutes({
-      path: "/products",
-      methods: [apigwv2.HttpMethod.POST, apigwv2.HttpMethod.GET],
-      integration: productsIntegration,
-    });
-
-    httpApi.addRoutes({
-      path: "/products/{id}",
-      methods: [apigwv2.HttpMethod.PATCH, apigwv2.HttpMethod.DELETE],
-      integration: productsIntegration,
-    });
-
-    httpApi.addRoutes({
-      path: "/products/import",
-      methods: [apigwv2.HttpMethod.POST],
-      integration: productsIntegration,
-    });
-
-    httpApi.addRoutes({
-      path: "/inventory/{productId}/transactions",
-      methods: [apigwv2.HttpMethod.POST, apigwv2.HttpMethod.GET],
-      integration: transactionsIntegration,
-    });
-
-    httpApi.addRoutes({
-      path: "/invoices",
-      methods: [apigwv2.HttpMethod.POST],
-      integration: invoicesIntegration,
-    });
-
-    httpApi.addRoutes({
-      path: "/invoices/{invoiceId}/status",
-      methods: [apigwv2.HttpMethod.POST,apigwv2.HttpMethod.GET],
-      integration: invoicesIntegration,
-    });
-
-    httpApi.addRoutes({
-      path: "/invoices/{invoiceId}/review",
-      methods: [apigwv2.HttpMethod.GET],
-      integration: invoicesIntegration,
-    });
+    addRoute(
+      httpApi,
+      "/business",
+      [
+        apigwv2.HttpMethod.POST,
+        apigwv2.HttpMethod.PATCH,
+        apigwv2.HttpMethod.GET,
+      ],
+      businessSetupIntegration,
+    );
+    addRoute(
+      httpApi,
+      "/products",
+      [apigwv2.HttpMethod.POST, apigwv2.HttpMethod.GET],
+      productsIntegration,
+    );
+    addRoute(
+      httpApi,
+      "/products/{id}",
+      [apigwv2.HttpMethod.PATCH, apigwv2.HttpMethod.DELETE],
+      productsIntegration,
+    );
+    addRoute(
+      httpApi,
+      "/products/import",
+      [apigwv2.HttpMethod.POST],
+      productsIntegration,
+    );
+    addRoute(
+      httpApi,
+      "/inventory/{productId}/transactions",
+      [apigwv2.HttpMethod.POST, apigwv2.HttpMethod.GET],
+      transactionsIntegration,
+    );
+    addRoute(
+      httpApi,
+      "/invoices",
+      [apigwv2.HttpMethod.POST],
+      invoicesIntegration,
+    );
+    addRoute(
+      httpApi,
+      "/invoices/{invoiceId}/status",
+      [apigwv2.HttpMethod.POST, apigwv2.HttpMethod.GET],
+      invoicesIntegration,
+    );
+    addRoute(
+      httpApi,
+      "/invoices/{invoiceId}/review",
+      [apigwv2.HttpMethod.GET],
+      invoicesIntegration,
+    );
 
     new CfnOutput(this, "ApiUrl", { value: httpApi.apiEndpoint });
   }
