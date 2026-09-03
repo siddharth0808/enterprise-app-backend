@@ -1,4 +1,4 @@
-import type { ExtractedInvoice } from "./types";
+import type { ExtractedInvoice } from "./invoicesProcesser";
 
 export interface InvoiceExtractor {
   extract(params: {

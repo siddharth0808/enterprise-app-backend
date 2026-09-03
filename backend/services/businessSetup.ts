@@ -1,8 +1,7 @@
 import { randomUUID } from "crypto";
-import { Business } from "../shared/types";
+import { Business } from "../types";
 import { dynamoDBService } from "../shared/ddb.service";
-
-const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
+import { BUSINESS_TABLE } from "../constants";
 
 export class BusinessService {
   constructor(private readonly ddbService = dynamoDBService) {}

@@ -28,7 +28,7 @@ jobs:
           npm -v
 
       - name: Install lamda-packages dependencies
-        working-directory: functions
+        working-directory: backend
         run: npm install && npm run build
 
       - name: Install dependencies

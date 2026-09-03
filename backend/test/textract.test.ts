@@ -1,4 +1,4 @@
-import { TextractInvoiceExtractor } from "../invoicesProcesser/textractExtractor";
+import { TextractInvoiceExtractor } from "../services/textractExtractor";
 
 
 

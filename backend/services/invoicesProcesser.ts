@@ -1,9 +1,7 @@
 import { dynamoDBService } from "../shared/ddb.service";
-import { extractedInvoiceSchema } from "./schema";
+import { extractedInvoiceSchema } from "../types/invoicesProcesser.schema";
 import { textractInvoiceExtractor } from "./textractExtractor";
-
-const INVOICES_TABLE = process.env.INVOICES_TABLE!;
-const INVOICE_BUCKET = process.env.INVOICE_BUCKET!;
+import { INVOICES_TABLE, INVOICE_BUCKET } from "../constants";
 export class InvoiceProcesserService {
   constructor(
     private readonly ddbService = dynamoDBService,

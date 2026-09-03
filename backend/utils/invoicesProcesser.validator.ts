@@ -1,7 +1,7 @@
-import { extractedInvoiceSchema } from "./schema";
+import { extractedInvoiceSchema } from "../types/invoicesProcesser.schema";
 import {
   type ExtractedInvoice,
-} from "./types";
+} from "../types/invoicesProcesser";
 
 export function validateExtractedInvoice(
   data: unknown,

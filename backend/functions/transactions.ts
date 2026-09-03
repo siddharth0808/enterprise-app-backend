@@ -1,6 +1,6 @@
 import { APIGatewayProxyEventV2WithJWTAuthorizer } from "aws-lambda";
-import { json, getClaims } from "../shared/http";;
-import { TransactionService } from "./service";
+import { json, getClaims } from "../utils/http";
+import { TransactionService } from "../services/transactions";
 
 
 

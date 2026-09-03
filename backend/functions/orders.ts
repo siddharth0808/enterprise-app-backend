@@ -2,11 +2,11 @@ import { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
 import { randomUUID } from 'crypto';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { json, getClaims } from '../shared/http';
-import { Order, OrderStatus } from '../shared/types';
+import { json, getClaims } from '../utils/http';
+import { Order, OrderStatus } from '../types';
+import { ORDERS_TABLE } from '../constants';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const ORDERS_TABLE = process.env.ORDERS_TABLE!;
 
 // Routes: POST /orders, GET /orders/{ownerId}, PATCH /orders/{ownerId}/{orderId}/status
 // Mirrors Request.java / OrderModel.java + ViewOrders.java / OrderAdapter.java.

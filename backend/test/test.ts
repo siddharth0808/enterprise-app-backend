@@ -1,4 +1,4 @@
-import {handler} from '../invoices/handler'
+import {handler} from '../functions/invoices'
 import { event } from './events/lambda'
 
 handler(event as any).then((res)=>{
