@@ -9,7 +9,7 @@ import {
   BatchWriteCommandInput,
   DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { UpdateItem } from "./types";
+import { UpdateItem } from "../types";
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const MAX_BATCH_SIZE = 25;

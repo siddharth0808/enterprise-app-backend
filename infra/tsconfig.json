@@ -23,5 +23,5 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "exclude": ["node_modules", "cdk.out", "../functions"]
+  "exclude": ["node_modules", "cdk.out", "../backend"]
 }

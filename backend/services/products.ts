@@ -1,11 +1,9 @@
 import { dynamoDBService } from "../shared/ddb.service";
 import { randomUUID } from "crypto";
-import { Products } from "../shared/types";
-import { ExtractedInvoiceItem } from "../invoicesProcesser/types";
-import { formatExpiryDate } from "../shared/utils";
-
-const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE!;
-const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
+import { Products } from "../types";
+import { ExtractedInvoiceItem } from "../types/invoicesProcesser";
+import { formatExpiryDate } from "../utils";
+import { BUSINESS_TABLE, PRODUCTS_TABLE } from "../constants";
 export class ProductService {
   constructor(private readonly ddbService = dynamoDBService) {}
 

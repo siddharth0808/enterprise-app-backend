@@ -1,6 +1,6 @@
 import { APIGatewayProxyEventV2WithJWTAuthorizer } from "aws-lambda";
-import { json, getClaims } from "../shared/http";
-import { ProductService } from "./service";
+import { json, getClaims } from "../utils/http";
+import { ProductService } from "../services/products";
 
 export const handler = async (
   event: APIGatewayProxyEventV2WithJWTAuthorizer,

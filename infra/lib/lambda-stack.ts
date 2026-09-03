@@ -40,7 +40,7 @@ export class LambdaStack extends Stack {
       {
         ...commonProps,
         functionName: `${APP_NAME}-businessSetup-${props.stage}`,
-        code: lambda.Code.fromAsset("../functions/dist/businessSetup"),
+        code: lambda.Code.fromAsset("../backend/dist/businessSetup"),
         handler: "index.handler",
         environment: { BUSINESS_TABLE: props.businessTable.tableName },
       },
@@ -53,7 +53,7 @@ export class LambdaStack extends Stack {
       {
         ...commonProps,
         functionName: `${APP_NAME}-productsFn-${props.stage}`,
-        code: lambda.Code.fromAsset("../functions/dist/products"),
+        code: lambda.Code.fromAsset("../backend/dist/products"),
         handler: "index.handler",
         environment: {
           PRODUCTS_TABLE: props.productsTable.tableName,
@@ -70,7 +70,7 @@ export class LambdaStack extends Stack {
       {
         ...commonProps,
         functionName: `${APP_NAME}-ordersFn-${props.stage}`,
-        code: lambda.Code.fromAsset("../functions/dist/orders"),
+        code: lambda.Code.fromAsset("../backend/dist/orders"),
         handler: "index.handler",
         environment: { ORDERS_TABLE: props.ordersTable.tableName },
       },
@@ -83,7 +83,7 @@ export class LambdaStack extends Stack {
       {
         ...commonProps,
         functionName: `${APP_NAME}-transactionsFn-${props.stage}`,
-        code: lambda.Code.fromAsset("../functions/dist/transactions"),
+        code: lambda.Code.fromAsset("../backend/dist/transactions"),
         handler: "index.handler",
         environment: {
           PRODUCTS_TABLE: props.productsTable.tableName,
@@ -103,7 +103,7 @@ export class LambdaStack extends Stack {
       {
         ...commonProps,
         functionName: `${APP_NAME}-invoicesProcesserFn-${props.stage}`,
-        code: lambda.Code.fromAsset("../functions/dist/invoicesProcesser"),
+        code: lambda.Code.fromAsset("../backend/dist/invoicesProcesser"),
         handler: "index.handler",
         timeout: Duration.minutes(15),
         environment: {
@@ -128,7 +128,7 @@ export class LambdaStack extends Stack {
       {
         ...commonProps,
         functionName: `${APP_NAME}-invoicesFn-${props.stage}`,
-        code: lambda.Code.fromAsset("../functions/dist/invoices"),
+        code: lambda.Code.fromAsset("../backend/dist/invoices"),
         handler: "index.handler",
         environment: {
           INVOICES_TABLE: props.invoicesTable.tableName,

@@ -10,12 +10,12 @@ rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
 
 const handlers = {
-  businessSetup: path.join(__dirname, 'businessSetup', 'handler.ts'),
-  products: path.join(__dirname, 'products', 'handler.ts'),
-  orders: path.join(__dirname, 'orders', 'handler.ts'),
-  transactions: path.join(__dirname, 'transactions', 'handler.ts'),
-  invoices: path.join(__dirname, 'invoices', 'handler.ts'),
-  invoicesProcesser: path.join(__dirname, 'invoicesProcesser', 'handler.ts'),
+  businessSetup: path.join(__dirname, 'functions', 'businessSetup.ts'),
+  products: path.join(__dirname, 'functions', 'products.ts'),
+  orders: path.join(__dirname, 'functions', 'orders.ts'),
+  transactions: path.join(__dirname, 'functions', 'transactions.ts'),
+  invoices: path.join(__dirname, 'functions', 'invoices.ts'),
+  invoicesProcesser: path.join(__dirname, 'functions', 'invoicesProcesser.ts'),
 
 };
 
