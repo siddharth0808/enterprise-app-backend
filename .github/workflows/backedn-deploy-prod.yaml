@@ -3,7 +3,10 @@ name: Goods Wise Backend Deploy Production
 on:
   push:
     branches:
-      - 'main'
+      - 'master'
+
+env:
+  AWS_REGION: us-east-1 
 
 jobs:
   deploy:
@@ -19,6 +22,7 @@ jobs:
       contents: read
 
     steps:
+        
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -33,17 +37,24 @@ jobs:
           npm -v
 
       - name: Install Lambda packages dependencies
-        working-directory: functions
+        working-directory: backend
         run: npm install && npm run build
 
       - name: Install dependencies
         working-directory: infra
         run: npm install
 
+      - name: Debug GitHub context
+        run: |
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Ref: $GITHUB_REF"
+          echo "Branch: $GITHUB_REF_NAME"
+          echo "Event: $GITHUB_EVENT_NAME"
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::814203451617:role/goods-wise-backend-github-prod
+          role-to-assume: arn:aws:iam::814203451617:role/goods-wise-backend-deploy-prod
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Verify AWS identity

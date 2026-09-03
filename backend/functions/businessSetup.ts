@@ -5,13 +5,10 @@ import {
   QueryCommand,
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { json, getClaims } from "../shared/http";
-import { Business } from "../shared/types";
-import { randomUUID } from "crypto";
-import { BusinessService } from "./service";
+import { json, getClaims } from "../utils/http";
+import { BusinessService } from "../services/businessSetup";
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
 
 // Cognito already created the user account (sign-up happens client-side against
 // the User Pool).

@@ -3,17 +3,20 @@ import {
   GetCommand,
   TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { InventoryTransaction } from "../shared/types";
-import { getTransactionSign } from "../shared/utils";
+import { InventoryTransaction } from "../types";
+import { getTransactionSign } from "../utils";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { json } from "../shared/http";
+import { json } from "../utils/http";
 import { randomUUID } from "crypto";
 import { dynamoDBService } from "../shared/ddb.service";
 
+import {
+  BUSINESS_TABLE,
+  PRODUCTS_TABLE,
+  TRANSACTIONS_TABLE,
+} from "../constants";
+
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE!;
-const TRANSACTIONS_TABLE = process.env.TRANSACTIONS_TABLE!;
-const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
 
 export class TransactionService {
   constructor(private readonly ddbService = dynamoDBService) {}

@@ -5,9 +5,9 @@ import {
   type AnalyzeExpenseResponse,
   type ExpenseField,
 } from "@aws-sdk/client-textract";
-import { InvoiceExtractor } from "./interface";
-import { ExtractedInvoice } from "./types";
-import { formatExpiryDate } from "../shared/utils";
+import { InvoiceExtractor } from "../types/invoicesProcesser.interface";
+import { ExtractedInvoice } from "../types/invoicesProcesser";
+import { formatExpiryDate } from "../utils";
 export class TextractInvoiceExtractor implements InvoiceExtractor {
   private readonly textract = new TextractClient({});
 

@@ -1,5 +1,5 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getExtension } from "../shared/utils";
+import { getExtension } from "../utils";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { dynamoDBService } from "../shared/ddb.service";
 import { s3Service } from "../shared/s3Bucket.service";
@@ -7,16 +7,17 @@ import { lambdaService } from "../shared/lambda.service";
 import {
   ExtractedInvoice,
   ExtractedInvoiceItem,
-} from "../invoicesProcesser/types";
+} from "../types/invoicesProcesser";
 import { QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "crypto";
 
-const BUSINESS_TABLE = process.env.BUSINESS_TABLE!;
-const INVOICES_TABLE = process.env.INVOICES_TABLE!;
-const INVOICE_BUCKET = process.env.INVOICE_BUCKET!;
-const INVOICES_PROCESSER_FUNCTION_NAME =
-  process.env.INVOICES_PROCESSER_FUNCTION_NAME!;
-const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE!;
+import {
+  BUSINESS_TABLE,
+  INVOICES_TABLE,
+  INVOICE_BUCKET,
+  INVOICES_PROCESSER_FUNCTION_NAME,
+  PRODUCTS_TABLE,
+} from "../constants";
 
 const ALLOWED_TYPES = [
   "application/pdf",

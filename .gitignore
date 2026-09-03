@@ -4,8 +4,7 @@ infra/.env
 
 infra/cdk.out/
 
-functions/node_modules/
-functions/.env
-functions/dist/
-
+backend/node_modules/
+backend/.env
+backend/dist/
 
