@@ -2,6 +2,8 @@ import { dynamoDBService } from "../shared/ddb.service";
 import { extractedInvoiceSchema } from "../types/invoicesProcesser.schema";
 import { textractInvoiceExtractor } from "./textractExtractor";
 import { INVOICES_TABLE, INVOICE_BUCKET } from "../constants";
+import { logError, logInfo } from "../utils/logger";
+import { buildResponse } from "../utils/http";
 export class InvoiceProcesserService {
   constructor(
     private readonly ddbService = dynamoDBService,
@@ -10,12 +12,19 @@ export class InvoiceProcesserService {
 
   public async execute(event: any) {
     try {
+
       const invoice = await this.ddbService.getItem(INVOICES_TABLE, {
         businessId: event.businessId,
         id: event.invoiceId,
       });
 
-      if (!invoice) throw Error("Invoice not found!");
+      if (!invoice) {
+        logError("InvoiceProcesserService", "Invoice not found", {
+          businessId: event.businessId,
+          invoiceId: event.invoiceId,
+        });
+        return buildResponse(404, { message: "Invoice not found" });
+      }
 
       await this.ddbService.updateItems(
         INVOICES_TABLE,
@@ -37,11 +46,12 @@ export class InvoiceProcesserService {
         bucket: INVOICE_BUCKET,
         documentKey: invoice.documentKey,
       });
-      console.log("extractRes:::", extractRes);
+
+      logInfo("InvoiceProcesserService", "Extracted invoice data", extractRes);
 
       const validated = extractedInvoiceSchema.parse(extractRes);
 
-      console.log("validated:::", JSON.stringify(validated));
+      logInfo("InvoiceProcesserService", "Validated invoice data", validated);
 
       const updateInvoiceExpression = {
         UpdateExpression: `SET #status = :status, #total=:total, invoiceDate=:invoiceDate, invoiceNumber=:invoiceNumber, products=:products, supplier=:supplier,  updatedAt = :updatedAt`,
@@ -59,10 +69,9 @@ export class InvoiceProcesserService {
           ":updatedAt": new Date().toISOString(),
         },
       };
-      console.log(
-        "updateInvoiceExpression:::::",
-        JSON.stringify(updateInvoiceExpression),
-      );
+      
+      logInfo("InvoiceProcesserService", "Update invoice expression", updateInvoiceExpression);
+
       await this.ddbService.updateItems(
         INVOICES_TABLE,
         {
@@ -74,7 +83,7 @@ export class InvoiceProcesserService {
         updateInvoiceExpression.ExpressionAttributeValues,
       );
     } catch (error: any) {
-      throw Error(error.message);
+      logError("InvoiceProcesserService", "Error processing invoice", error);
     }
   }
 }

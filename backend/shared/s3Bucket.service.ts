@@ -5,6 +5,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { EXPIRSE_IN } from "../constants";
 
 const s3 = new S3Client({});
 
@@ -23,7 +24,7 @@ export class S3Service {
       });
 
       const uploadUrl = await getSignedUrl(s3, command, {
-        expiresIn: 900,
+        expiresIn: EXPIRSE_IN,
       });
       return uploadUrl;
     } catch (error: any) {
@@ -42,12 +43,6 @@ export class S3Service {
           Key,
         }),
       );
-
-      console.log("S3 object exists", {
-        Key,
-        statusCode: response.$metadata.httpStatusCode,
-        contentLength: response.ContentLength,
-      });
 
       return true;
     } catch (error: any) {

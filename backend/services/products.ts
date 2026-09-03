@@ -2,8 +2,9 @@ import { dynamoDBService } from "../shared/ddb.service";
 import { randomUUID } from "crypto";
 import { Products } from "../types";
 import { ExtractedInvoiceItem } from "../types/invoicesProcesser";
-import { formatExpiryDate } from "../utils";
 import { BUSINESS_TABLE, PRODUCTS_TABLE } from "../constants";
+import { logError, logInfo } from "../utils/logger";
+import { buildResponse } from "../utils/http";
 export class ProductService {
   constructor(private readonly ddbService = dynamoDBService) {}
 
@@ -13,15 +14,21 @@ export class ProductService {
         BUSINESS_TABLE,
         ownerId,
       );
-      if (!business) throw Error("Business not found!");
+
+      if (!business) {
+        logError("getProducts", "Business not found");
+        return buildResponse(404, { message: "Business not found" });
+      }
+
       const products = await this.ddbService.getAllItems(
         PRODUCTS_TABLE,
         `businessId = :businessId`,
         { ":businessId": business.id },
       );
-      return products;
+
+      return buildResponse(200, products ?? []);
     } catch (error: any) {
-      console.log("getProducts error:::::", error.stack);
+      logError("getProducts", error.message);
       throw Error(error.message);
     }
   }
@@ -32,7 +39,10 @@ export class ProductService {
         BUSINESS_TABLE,
         ownerId,
       );
-      if (!business) throw Error("Business not found!");
+      if (!business) {
+        logError("createProduct", "Business not found");
+        return buildResponse(404, { message: "Business not found" });
+      }
 
       const item: Products = {
         id: randomUUID(),
@@ -56,13 +66,15 @@ export class ProductService {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      console.log("items:::::::::::::::::::", JSON.stringify(item));
+
+      logInfo("createProduct", "items", JSON.stringify(item));
+
       await this.ddbService.putItems(PRODUCTS_TABLE, item);
 
-      return item;
+      return buildResponse(201, item);
     } catch (error: any) {
-      console.log(error.stack);
-      throw Error(error.message);
+      logError("createProduct", error.message);
+      return buildResponse(500, { message: error.message });
     }
   }
 
@@ -79,11 +91,17 @@ export class ProductService {
         amount,
         discount,
       } = body;
+
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
         ownerId,
       );
-      if (!business) throw Error("Business not found!");
+
+      if (!business) {
+        logError("updateProduct", "Business not found");
+        return buildResponse(404, { message: "Business not found" });
+      }
+
       const updateItems = {
         Key: {
           businessId: business.id,
@@ -114,11 +132,13 @@ export class ProductService {
         updateItems.ExpressionAttributeNames,
         updateItems.ExpressionAttributeValues,
       );
-      console.log("Updated items:::", JSON.stringify(item));
-      return { ...item, id: productId };
+
+      logInfo("updateProduct", "Updated items", JSON.stringify(item));
+
+      return buildResponse(200, { ...item, id: productId });
     } catch (error: any) {
-      console.log(error.stack);
-      throw Error(error.message);
+      logError("updateProduct", error.message);
+      return buildResponse(500, { message: error.message });
     }
   }
 
@@ -131,7 +151,10 @@ export class ProductService {
         BUSINESS_TABLE,
         ownerId,
       );
-      if (!business) throw Error("Business not found!");
+      if (!business) {
+        logError("importProducts", "Business not found");
+        return buildResponse(404, { message: "Business not found" });
+      }
 
       const newProducts = products.filter(
         (product: ExtractedInvoiceItem) => product.status === "NEW",
@@ -140,8 +163,11 @@ export class ProductService {
       const existingProducts = products.filter(
         (product: ExtractedInvoiceItem) => product.status === "EXISTING",
       );
-      let items: any =[];
-      console.log("New products::::::::::::::::", JSON.stringify(newProducts))
+
+      let items: any = [];
+
+      logInfo("importProducts", "New products", JSON.stringify(newProducts));
+
       if (newProducts.length) {
         items = newProducts.map((product: ExtractedInvoiceItem) => {
           return {
@@ -150,7 +176,7 @@ export class ProductService {
             businessId: business.id,
             name: product.name,
             category: business.businessType,
-            manufacturer: product?.manufacturer || '',
+            manufacturer: product?.manufacturer || "",
             rate: Number(product.rate || 0),
             mrp: Number(product.mrp || 0),
             batchNumber: product.batchNumber,
@@ -161,70 +187,83 @@ export class ProductService {
             minimumStock: Number(product?.minimumStock || 0),
             cgst: Number(product?.cgst || 0),
             sgst: Number(product?.sgst || 0),
-            expiryDate: product.expiryDate ? new Date(product.expiryDate).valueOf() : product.expiryDate,
+            expiryDate: product.expiryDate
+              ? new Date(product.expiryDate).valueOf()
+              : product.expiryDate,
             discount: Number(product?.discount || 0),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
         });
-      console.log("New products items::::::::::::::::", JSON.stringify(items))
+
+        logInfo("importProducts", "New products items", JSON.stringify(items));
 
         await this.ddbService.batchWriteItems(PRODUCTS_TABLE, items);
       }
-      console.log("Existing products::::::::::::::::", JSON.stringify(existingProducts))
+      logInfo(
+        "importProducts",
+        "Existing products",
+        JSON.stringify(existingProducts),
+      );
 
       if (existingProducts.length) {
-        const updateItems = existingProducts.map((product: ExtractedInvoiceItem) => {
-          return {
-            Key: {
-              businessId: business.id,
-              id: product.id,
-            },
-            UpdateExpression:
-              "SET #status = :status, currentStock = :currentStock, mrp = :mrp, rate = :rate, amount = :amount, updatedAt = :updatedAt",
-            ExpressionAttributeNames: {
-              "#status": "status",
-            },
-            ExpressionAttributeValues: {
-              ":status": product.status,
-              ":currentStock":
-                Number(product.quantity) + Number(product.currentQuantity),
-              ":mrp": Number(product.mrp),
-              ":rate": Number(product.rate),
-              ":amount": Number(product.amount),
-              ":updatedAt": new Date().toISOString(),
-            },
-          };
-        });
+        const updateItems = existingProducts.map(
+          (product: ExtractedInvoiceItem) => {
+            return {
+              Key: {
+                businessId: business.id,
+                id: product.id,
+              },
+              UpdateExpression:
+                "SET #status = :status, currentStock = :currentStock, mrp = :mrp, rate = :rate, amount = :amount, updatedAt = :updatedAt",
+              ExpressionAttributeNames: {
+                "#status": "status",
+              },
+              ExpressionAttributeValues: {
+                ":status": product.status,
+                ":currentStock":
+                  Number(product.quantity) + Number(product.currentQuantity),
+                ":mrp": Number(product.mrp),
+                ":rate": Number(product.rate),
+                ":amount": Number(product.amount),
+                ":updatedAt": new Date().toISOString(),
+              },
+            };
+          },
+        );
 
         await this.ddbService.batchUpdateItems(PRODUCTS_TABLE, updateItems);
+
         items = [...items, ...existingProducts];
       }
-      return items;
+      return buildResponse(200, items);
     } catch (error: any) {
-      console.log(error.stack);
-      throw Error(error.message);
+      logError("importProducts", error.message);
+      return buildResponse(500, { message: error.message });
     }
   }
 
-   public async deleteProduct(ownerId: string, id:string) {
+  public async deleteProduct(ownerId: string, id: string) {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
         ownerId,
       );
-      if (!business) throw Error("Business not found!");
-      const products = await this.ddbService.deleteItem(
-        PRODUCTS_TABLE,
-        {
-          businessId: business.id,
-          id
-        }
-      );
-      return products;
+
+      if (!business) {
+        logError("deleteProduct", "Business not found");
+        throw Error("Business not found!");
+      }
+
+      const products = await this.ddbService.deleteItem(PRODUCTS_TABLE, {
+        businessId: business.id,
+        id,
+      });
+
+      return buildResponse(200, products);
     } catch (error: any) {
-      console.log("getProducts error:::::", error.stack);
-      throw Error(error.message);
+      logError("deleteProduct", error.message);
+      return buildResponse(500, { message: error.message });
     }
   }
 }

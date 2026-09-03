@@ -1,4 +1,7 @@
-import { DynamoDBClient, UpdateItemCommandInput } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBClient,
+  UpdateItemCommandInput,
+} from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   GetCommand,
@@ -27,8 +30,6 @@ export class DynamoDBService {
           },
         }),
       );
-      console.log("getBusinessByOwnerId::::::", JSON.stringify(business));
-
       return business.Item ? business.Item : {};
     } catch (error: any) {
       throw Error(error.message);
@@ -57,7 +58,6 @@ export class DynamoDBService {
           Key,
         }),
       );
-      console.log("getItem::::::", JSON.stringify(resposne));
       return resposne.Item ? resposne.Item : {};
     } catch (error: any) {
       throw Error(error.message);
@@ -72,7 +72,6 @@ export class DynamoDBService {
           Key,
         }),
       );
-      console.log("deleteItem::::::", JSON.stringify(resposne));
       return resposne.Attributes ? resposne.Attributes : {};
     } catch (error: any) {
       throw Error(error.message);
@@ -91,14 +90,11 @@ export class DynamoDBService {
         TableName: tableName,
         Key,
         UpdateExpression,
-        ...(ExpressionAttributeNames ? {ExpressionAttributeNames} : {}) ,
+        ...(ExpressionAttributeNames ? { ExpressionAttributeNames } : {}),
         ExpressionAttributeValues,
-        ReturnValues: 'ALL_NEW',
+        ReturnValues: "ALL_NEW",
       };
-      console.log(
-        "updateItems command::::::::::::::::",
-        JSON.stringify(command),
-      );
+
       const res = await ddb.send(new UpdateCommand(command));
       return res.Attributes;
     } catch (error: any) {
@@ -117,12 +113,9 @@ export class DynamoDBService {
         KeyConditionExpression,
         ExpressionAttributeValues,
       };
-      console.log("getAllItems command::::", JSON.stringify(command));
       const resposne = await ddb.send(new QueryCommand(command));
-      console.log("getAllItems::::::", JSON.stringify(resposne));
       return resposne.Items ? resposne.Items : [];
     } catch (error: any) {
-      console.log('getAllItems error:::::', error.stack)
       throw Error(error.message);
     }
   }
@@ -142,9 +135,7 @@ export class DynamoDBService {
         ExpressionAttributeNames,
         ExpressionAttributeValues,
       };
-      console.log("getItemsByIndex command::::", JSON.stringify(command));
       const resposne = await ddb.send(new QueryCommand(command));
-      console.log("getItemsByIndex::::::", JSON.stringify(resposne));
       return resposne.Items ? resposne.Items : [];
     } catch (error: any) {
       throw Error(error.message);

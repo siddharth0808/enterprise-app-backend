@@ -2,6 +2,8 @@ import { randomUUID } from "crypto";
 import { Business } from "../types";
 import { dynamoDBService } from "../shared/ddb.service";
 import { BUSINESS_TABLE } from "../constants";
+import { buildResponse } from "../utils/http";
+import { logError } from "../utils/logger";
 
 export class BusinessService {
   constructor(private readonly ddbService = dynamoDBService) {}
@@ -22,9 +24,10 @@ export class BusinessService {
       };
 
       await this.ddbService.putItems(BUSINESS_TABLE, business);
-      return business;
+      return buildResponse(201, business);
     } catch (error: any) {
-      throw Error(error.message);
+      logError("setUpBusiness", "Error setting up business", error);
+      return buildResponse(500, { message: error.message });
     }
   }
 
@@ -35,9 +38,10 @@ export class BusinessService {
         "ownerId = :ownerId",
         { ":ownerId": ownerId },
       );
-      return business;
+      return buildResponse(200, business ?? []);
     } catch (error: any) {
-      throw Error(error.message);
+      logError("getBusiness", "Error fetching business", error);
+      return buildResponse(500, { message: error.message });
     }
   }
 
@@ -47,7 +51,10 @@ export class BusinessService {
         BUSINESS_TABLE,
         ownerId,
       );
-      if (!business) throw Error("Business not found!");
+      if (!business) {
+        logError("updateBusiness", "Business not found");
+        return buildResponse(404, { message: "Business not found" });
+      }
       const updateItems = {
         Key: {
           ownerId
@@ -69,9 +76,10 @@ export class BusinessService {
         updateItems.ExpressionAttributeNames,
         updateItems.ExpressionAttributeValues,
       );
-      return response;
+      return buildResponse(201, response);
     } catch (error: any) {
-      throw Error(error.message);
+      logError("updateBusiness", "Error updating business", error);
+      return buildResponse(500, { message: error.message });
     }
   }
 }
