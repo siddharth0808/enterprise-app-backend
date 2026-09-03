@@ -1,4 +1,4 @@
-import { Stack, StackProps, RemovalPolicy, Duration } from "aws-cdk-lib";
+import { Stack, StackProps, RemovalPolicy } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from "aws-cdk-lib/aws-s3";
@@ -10,6 +10,25 @@ import { ALLOW_ORIGINS, APP_NAME } from "../constant";
 export interface DataStackProps extends StackProps {
   stage?: string;
 }
+
+function createTable(
+  scope: Construct,
+  id: string,
+  tableName: string,
+  partitionKey: dynamodb.Attribute,
+  sortKey?: dynamodb.Attribute,
+  stream?: dynamodb.StreamViewType,
+): dynamodb.Table {
+  return new dynamodb.Table(scope, id, {
+    tableName,
+    partitionKey,
+    ...(sortKey ? { sortKey } : {}),
+    billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+    removalPolicy: RemovalPolicy.RETAIN,
+    ...(stream ? { stream } : {}),
+  });
+}
+
 export class DataStack extends Stack {
   public readonly businessTable: dynamodb.Table;
   public readonly productsTable: dynamodb.Table;
@@ -23,15 +42,11 @@ export class DataStack extends Stack {
     super(scope, id, props);
 
     // Businesses — one item per business. PK = ownerId (Cognito sub).
-    this.businessTable = new dynamodb.Table(
+    this.businessTable = createTable(
       this,
       `${APP_NAME}-businessTable-${props.stage}`,
-      {
-        tableName: `${APP_NAME}-business-${props.stage}`,
-        partitionKey: { name: "ownerId", type: dynamodb.AttributeType.STRING },
-        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-        removalPolicy: RemovalPolicy.RETAIN,
-      },
+      `${APP_NAME}-business-${props.stage}`,
+      { name: "ownerId", type: dynamodb.AttributeType.STRING },
     );
 
     this.businessTable.addGlobalSecondaryIndex({
@@ -42,19 +57,12 @@ export class DataStack extends Stack {
       },
     });
 
-    this.productsTable = new dynamodb.Table(
+    this.productsTable = createTable(
       this,
       `${APP_NAME}-productsTable-${props.stage}`,
-      {
-        tableName: `${APP_NAME}-products-${props.stage}`,
-        partitionKey: {
-          name: "businessId",
-          type: dynamodb.AttributeType.STRING,
-        },
-        sortKey: { name: "id", type: dynamodb.AttributeType.STRING },
-        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-        removalPolicy: RemovalPolicy.RETAIN,
-      },
+      `${APP_NAME}-products-${props.stage}`,
+      { name: "businessId", type: dynamodb.AttributeType.STRING },
+      { name: "id", type: dynamodb.AttributeType.STRING },
     );
 
     this.productsTable.addGlobalSecondaryIndex({
@@ -70,48 +78,30 @@ export class DataStack extends Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
-    this.transactionsTable = new dynamodb.Table(
+    this.transactionsTable = createTable(
       this,
       `${APP_NAME}-transactionsTable-${props.stage}`,
-      {
-        tableName: `${APP_NAME}-transactions-${props.stage}`,
-        partitionKey: {
-          name: "productId",
-          type: dynamodb.AttributeType.STRING,
-        },
-        sortKey: { name: "id", type: dynamodb.AttributeType.STRING },
-        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-        removalPolicy: RemovalPolicy.RETAIN,
-      },
+      `${APP_NAME}-transactions-${props.stage}`,
+      { name: "productId", type: dynamodb.AttributeType.STRING },
+      { name: "id", type: dynamodb.AttributeType.STRING },
     );
 
-    this.invoicesTable = new dynamodb.Table(
+    this.invoicesTable = createTable(
       this,
       `${APP_NAME}-invoicesTable-${props.stage}`,
-      {
-        tableName: `${APP_NAME}-invoices-${props.stage}`,
-        partitionKey: {
-          name: "businessId",
-          type: dynamodb.AttributeType.STRING,
-        },
-        sortKey: { name: "id", type: dynamodb.AttributeType.STRING },
-        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-        removalPolicy: RemovalPolicy.RETAIN,
-      },
+      `${APP_NAME}-invoices-${props.stage}`,
+      { name: "businessId", type: dynamodb.AttributeType.STRING },
+      { name: "id", type: dynamodb.AttributeType.STRING },
     );
 
     // Orders — PK = ownerId, SK = orderId. GSI lets a customer look up their own orders.
-    this.ordersTable = new dynamodb.Table(
+    this.ordersTable = createTable(
       this,
       `${APP_NAME}-ordersTable-${props.stage}`,
-      {
-        tableName: `${APP_NAME}-orders-${props.stage}`,
-        partitionKey: { name: "ownerId", type: dynamodb.AttributeType.STRING },
-        sortKey: { name: "orderId", type: dynamodb.AttributeType.STRING },
-        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-        removalPolicy: RemovalPolicy.RETAIN,
-        stream: dynamodb.StreamViewType.NEW_IMAGE, // enables future push-notification-on-status-change
-      },
+      `${APP_NAME}-orders-${props.stage}`,
+      { name: "ownerId", type: dynamodb.AttributeType.STRING },
+      { name: "orderId", type: dynamodb.AttributeType.STRING },
+      dynamodb.StreamViewType.NEW_IMAGE,
     );
 
     this.ordersTable.addGlobalSecondaryIndex({
