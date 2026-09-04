@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { EXPIRSE_IN } from "../constants";
+import { logError } from "../utils/logger";
 
 const s3 = new S3Client({});
 
@@ -46,7 +47,7 @@ export class S3Service {
 
       return true;
     } catch (error: any) {
-      console.error("S3 HeadObject failed", {
+      logError("isObjectAvailable", "S3 HeadObject failed", {
         name: error?.name,
         message: error?.message,
         code: error?.code,

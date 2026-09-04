@@ -1,0 +1,29 @@
+import { APIGatewayProxyEventV2WithJWTAuthorizer } from "aws-lambda";
+import { getClaims, buildResponse } from "../utils/http";
+import { logError } from "../utils/logger";
+import { SalesService } from "../services/sales";
+
+export const handler = async (event: APIGatewayProxyEventV2WithJWTAuthorizer) => {
+  try {
+    const service = new SalesService();
+    const method = event.requestContext.http.method;
+
+    if (method === "POST") {
+        const { sub, fullName = '' } = getClaims(event);
+        const body = JSON.parse(event.body ?? "{}");
+        const result = await service.createSale({ ...body, businessId: sub });
+        return result;
+    }
+
+    if (method === "GET") {
+        const { sub } = getClaims(event);
+        const result = await service.getSales(sub);
+        return result;
+    }
+
+    return buildResponse(405, { message: "Method not allowed" });
+    } catch (error) {
+        logError("salesHandler", "Error processing sales request", error);
+        return buildResponse(500, { message: "Internal server error" });
+    }
+};

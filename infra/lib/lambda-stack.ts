@@ -13,6 +13,7 @@ export interface LambdaStackProps extends StackProps {
   ordersTable: dynamodb.Table;
   transactionsTable: dynamodb.Table;
   invoicesTable: dynamodb.Table;
+  salesTable: dynamodb.Table;
   inventoryFlowBucket: s3.Bucket;
   stage?: string;
 }
@@ -28,6 +29,7 @@ export class LambdaStack extends Stack {
   public readonly transactionsFn: lambda.Function;
   public readonly invoicesFn: lambda.Function;
   public readonly invoicesProcesserFn: lambda.Function;
+  public readonly salesFn: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -110,6 +112,17 @@ export class LambdaStack extends Stack {
     this.grantDynamoDb(this.invoicesFn, props.productsTable, "read");
 
     this.invoicesProcesserFn.grantInvoke(this.invoicesFn);
+
+    this.salesFn = this.createLambda(
+      "salesFn",
+      "../backend/dist/sales",
+      {
+        SALES_TABLE: props.salesTable.tableName,
+        BUSINESS_TABLE: props.businessTable.tableName,
+      },
+    );
+    this.grantDynamoDb(this.salesFn, props.salesTable, "readWrite");
+    this.grantDynamoDb(this.salesFn, props.businessTable, "read");
   }
 
   private createLambda(

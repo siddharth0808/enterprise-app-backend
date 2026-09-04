@@ -25,7 +25,7 @@ export const handler = async (
 
   // Get all transactions for a user and product
   if (method === "GET") {
-    const getTransactionsRes = await service.getTransactions(sub, productId)
+    const getTransactionsRes = await service.getTransactions(productId)
     return getTransactionsRes;
   }
 

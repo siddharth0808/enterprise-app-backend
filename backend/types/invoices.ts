@@ -3,3 +3,8 @@ export interface CreateInvoiceRequest {
   contentType: string;
   fileSize?: number;
 }
+
+export interface LambdaEvent {
+  businessId: string;
+  invoiceId: string;
+}

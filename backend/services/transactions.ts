@@ -1,10 +1,8 @@
 import {
-  DynamoDBDocumentClient,
-  TransactWriteCommand,
-} from "@aws-sdk/lib-dynamodb";
-import { InventoryTransaction } from "../types";
+  InventoryTransaction,
+  UpdateTransactionRequest,
+} from "../types/transactions";
 import { getTransactionSign } from "../utils";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { randomUUID } from "crypto";
 import { dynamoDBService } from "../shared/ddb.service";
 
@@ -15,8 +13,7 @@ import {
 } from "../constants";
 import { buildResponse } from "../utils/http";
 import { logError } from "../utils/logger";
-
-const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+import { APIGatewayProxyResultV2 } from "aws-lambda";
 
 export class TransactionService {
   constructor(private readonly ddbService = dynamoDBService) {}
@@ -25,8 +22,8 @@ export class TransactionService {
     ownerId: string,
     fullName: string,
     productId: string,
-    body: any,
-  ) {
+    payload: UpdateTransactionRequest,
+  ): Promise<APIGatewayProxyResultV2> {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -46,58 +43,60 @@ export class TransactionService {
       const currentStock = product?.currentStock ?? 0;
       const rate = product?.rate ?? 0;
 
-      const sign = getTransactionSign(body.type);
-      const signedQuantity = sign * Math.abs(Number(body.quantity) || 0);
+      const sign = getTransactionSign(payload.type);
+      const signedQuantity = sign * Math.abs(Number(payload.quantity) || 0);
       const newStock = Number(currentStock + signedQuantity);
       const newAmount = Number(newStock * rate);
 
-      if (newStock < 0){
-        logError("updateTransaction", "Adjustment quantity could not be greater than current stock");
-return buildResponse(400, {
+      if (newStock < 0) {
+        logError(
+          "updateTransaction",
+          "Adjustment quantity could not be greater than current stock",
+        );
+        return buildResponse(400, {
           message: `Adjustment quantity could not be greater than current stock!`,
         });
       }
-        
+
       const item: InventoryTransaction = {
         ownerId,
         businessId: business.id,
         productId,
         id: randomUUID(),
-        type: body.type,
-        quantity: Number(body.quantity),
+        type: payload.type,
+        quantity: Number(payload.quantity),
         previousStock: Number(currentStock),
         newStock,
         newAmount,
-        reason: body.reason ?? "",
+        reason: payload.reason ?? "",
         createdBy: fullName ?? "",
         createdAt: new Date().toISOString(),
       };
 
-      await ddb.send(
-        new TransactWriteCommand({
-          TransactItems: [
-            {
-              Update: {
-                TableName: PRODUCTS_TABLE,
-                Key: {
-                  businessId: business.id,
-                  id: productId,
-                },
-                UpdateExpression:
-                  "SET currentStock =:currentStock, amount =:amount, updatedAt=:updatedAt",
-                ExpressionAttributeValues: {
-                  ":currentStock": newStock,
-                  ":amount": newAmount,
-                  ":updatedAt": new Date().toISOString(),
-                },
-              },
+      const transactonItems = [
+        {
+          Update: {
+            TableName: PRODUCTS_TABLE,
+            Key: {
+              businessId: business.id,
+              id: productId,
             },
-            {
-              Put: { TableName: TRANSACTIONS_TABLE, Item: item },
+            UpdateExpression:
+              "SET currentStock =:currentStock, amount =:amount, updatedAt=:updatedAt",
+            ExpressionAttributeValues: {
+              ":currentStock": newStock,
+              ":amount": newAmount,
+              ":updatedAt": new Date().toISOString(),
             },
-          ],
-        }),
-      );
+          },
+        },
+        {
+          Put: { TableName: TRANSACTIONS_TABLE, Item: item },
+        },
+      ];
+
+      await this.ddbService.transactWriteItems(transactonItems);
+
       return buildResponse(201, item);
     } catch (error: any) {
       logError("updateTransaction", "Error updating transaction", error);
@@ -105,7 +104,9 @@ return buildResponse(400, {
     }
   }
 
-  public async getTransactions(ownerId: string, productId: string) {
+  public async getTransactions(
+    productId: string,
+  ): Promise<APIGatewayProxyResultV2> {
     try {
       const result = await this.ddbService.getAllItems(
         TRANSACTIONS_TABLE,

@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import {  buildResponse, getClaims } from '../utils/http';
-import { Order, OrderStatus } from '../types';
+import { Order, OrderStatus } from '../types/order';
 import { ORDERS_TABLE } from '../constants';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));

@@ -11,11 +11,12 @@ import {
   BatchWriteCommand,
   BatchWriteCommandInput,
   DeleteCommand,
+  TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { UpdateItem } from "../types";
+import { UpdateItem } from "../types/common";
+import { MAX_BATCH_SIZE } from "../constants";
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const MAX_BATCH_SIZE = 25;
 
 export class DynamoDBService {
   constructor() {}
@@ -191,6 +192,18 @@ export class DynamoDBService {
     );
 
     return results;
+  }
+
+  public async transactWriteItems(transactItems: any[]) {
+    try {
+      await ddb.send(
+        new TransactWriteCommand({
+          TransactItems: transactItems,
+        }),
+      );
+    } catch (error: any) {
+      throw Error(error.message);
+    }
   }
 }
 

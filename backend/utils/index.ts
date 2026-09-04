@@ -1,4 +1,4 @@
-import { TransactionType, TRANSACTION_TYPE_OPTIONS } from "../types";
+import { TransactionType, TRANSACTION_TYPE_OPTIONS } from "../types/transactions";
 
 export function getTransactionSign(type: TransactionType): 1 | -1 {
   const match = TRANSACTION_TYPE_OPTIONS.find((option) => option.value === type);
@@ -28,7 +28,6 @@ export function getExtension(fileName: string, contentType: string): string {
 }
 
 export function formatExpiryDate(date: string) {
-  console.log("Date:::::::::::::", date)
   if(date?.includes('/')){
     const [month, year] = date.split("/");
   

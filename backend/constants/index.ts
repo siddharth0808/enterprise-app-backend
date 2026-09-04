@@ -9,4 +9,4 @@ export {
   INVOICES_PROCESSER_FUNCTION_NAME
 } from "./tableName";
 
-export { ALLOWED_TYPES, MAX_FILE_SIZE, EXPIRSE_IN } from "./common";
+export { ALLOWED_TYPES, MAX_FILE_SIZE, EXPIRSE_IN, MAX_BATCH_SIZE } from "./common";

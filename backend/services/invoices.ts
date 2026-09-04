@@ -17,9 +17,10 @@ import {
   ALLOWED_TYPES,
   MAX_FILE_SIZE,
 } from "../constants";
-import { CreateInvoiceRequest } from "../types/invoices";
+import { CreateInvoiceRequest, LambdaEvent } from "../types/invoices";
 import { logError, logInfo } from "../utils/logger";
 import { buildResponse } from "../utils/http";
+import { APIGatewayProxyResultV2 } from "aws-lambda";
 
 export class UploadInvoiceService {
   constructor(
@@ -54,17 +55,19 @@ export class UploadInvoiceService {
     return { fileName, contentType, fileSize, businessId };
   }
 
-  public async uploadInvoice(body: any, sub: string) {
+  public async uploadInvoice(payload: CreateInvoiceRequest, sub: string): Promise<APIGatewayProxyResultV2>  {
     try {
-      const { fileName, contentType, fileSize }: CreateInvoiceRequest = body;
+      const { fileName, contentType, fileSize }: CreateInvoiceRequest = payload;
 
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
         sub,
       );
 
-      console.log("Business respons::::", JSON.stringify(business));
-      if (!business) throw Error("Business not found!");
+      if (!business) {
+        logError("uploadInvoice", "Business not found");
+        return buildResponse(404, { message: "Business not found" });
+      }
 
       await this.validatedUploadInvoiceReq(
         sub,
@@ -74,7 +77,7 @@ export class UploadInvoiceService {
         fileSize,
       );
 
-      const invoiceId = crypto.randomUUID();
+      const invoiceId = randomUUID();
 
       const extension = getExtension(fileName, contentType);
 
@@ -104,19 +107,21 @@ export class UploadInvoiceService {
         contentType,
       );
 
-      return {
+      return buildResponse(200, {
         invoiceId,
         status: invoice.status,
         uploadUrl,
         expiresIn: 900,
-      };
+      });
     } catch (error: any) {
-      console.log("uploadInvoice error::::", error.stack);
-      throw Error(error.message);
+      logError("uploadInvoice", "Error uploading invoice", error);
+      return buildResponse(500, {
+        message: error.message,
+      });
     }
   }
 
-  public async updateInvoiceStatus(sub: string, invoiceId: string) {
+  public async updateInvoiceStatus(sub: string, invoiceId: string): Promise<APIGatewayProxyResultV2>  {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -162,7 +167,7 @@ export class UploadInvoiceService {
         },
       );
 
-      const lambdaEvent = {
+      const lambdaEvent: LambdaEvent = {
         businessId: business.id,
         invoiceId,
       };
@@ -179,7 +184,7 @@ export class UploadInvoiceService {
     }
   }
 
-  public async getInvoiceStatus(sub: string, invoiceId: string) {
+  public async getInvoiceStatus(sub: string, invoiceId: string): Promise<APIGatewayProxyResultV2>  {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -207,7 +212,7 @@ export class UploadInvoiceService {
     }
   }
 
-  public async getInvoiceReview(ownerId: string, invoiceId: string) {
+  public async getInvoiceReview(ownerId: string, invoiceId: string): Promise<APIGatewayProxyResultV2>  {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -334,7 +339,7 @@ export class UploadInvoiceService {
         supplier: invoice.supplier,
         total: invoice.total,
       } as ExtractedInvoice);
-      
+
     } catch (error: any) {
       logError(
         "getInvoiceReview",

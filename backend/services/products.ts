@@ -1,14 +1,15 @@
 import { dynamoDBService } from "../shared/ddb.service";
 import { randomUUID } from "crypto";
-import { Products } from "../types";
+import { CreateProductRequest, Product } from "../types/products";
 import { ExtractedInvoiceItem } from "../types/invoicesProcesser";
 import { BUSINESS_TABLE, PRODUCTS_TABLE } from "../constants";
 import { logError, logInfo } from "../utils/logger";
 import { buildResponse } from "../utils/http";
+import { APIGatewayProxyResultV2 } from "aws-lambda";
 export class ProductService {
   constructor(private readonly ddbService = dynamoDBService) {}
 
-  public async getProducts(ownerId: string) {
+  public async getProducts(ownerId: string): Promise<APIGatewayProxyResultV2>   {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -33,7 +34,7 @@ export class ProductService {
     }
   }
 
-  public async createProduct(ownerId: string, body: any) {
+  public async createProduct(ownerId: string, payload: Product): Promise<APIGatewayProxyResultV2>   {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -44,25 +45,25 @@ export class ProductService {
         return buildResponse(404, { message: "Business not found" });
       }
 
-      const item: Products = {
+      const item: CreateProductRequest = {
         id: randomUUID(),
         ownerId,
         businessId: business.id,
-        name: body.name,
+        name: payload.name,
         category: business.businessType,
-        rate: Number(body.rate),
-        mrp: Number(body.mrp),
-        currentStock: Number(body.currentStock),
-        manufacturer: body?.manufacturer || "",
-        batchNumber: body?.batchNumber || "",
-        hsn: body?.hsn || "",
-        status: body.status,
-        amount: Number(body?.amount || 0),
-        minimumStock: Number(body?.minimumStock || 0),
-        cgst: Number(body?.cgst || 0),
-        sgst: Number(body?.sgst || 0),
-        expiryDate: new Date(body.expiryDate).valueOf() || 0,
-        discount: Number(body?.discount || 0),
+        rate: Number(payload.rate),
+        mrp: Number(payload.mrp),
+        currentStock: Number(payload.currentStock),
+        manufacturer: payload?.manufacturer || "",
+        batchNumber: payload?.batchNumber || "",
+        hsn: payload?.hsn || "",
+        status: payload.status,
+        amount: Number(payload?.amount || 0),
+        minimumStock: Number(payload?.minimumStock || 0),
+        cgst: Number(payload?.cgst || 0),
+        sgst: Number(payload?.sgst || 0),
+        expiryDate: new Date(payload.expiryDate).valueOf() || 0,
+        discount: Number(payload?.discount || 0),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -78,7 +79,7 @@ export class ProductService {
     }
   }
 
-  public async updateProduct(ownerId: string, productId: string, body: any) {
+  public async updateProduct(ownerId: string, productId: string, payload: Product): Promise<APIGatewayProxyResultV2>   {
     try {
       const {
         name,
@@ -90,7 +91,7 @@ export class ProductService {
         manufacturer,
         amount,
         discount,
-      } = body;
+      } = payload;
 
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -145,7 +146,7 @@ export class ProductService {
   public async importProducts(
     ownerId: string,
     products: ExtractedInvoiceItem[],
-  ) {
+  ): Promise<APIGatewayProxyResultV2>   {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -164,7 +165,7 @@ export class ProductService {
         (product: ExtractedInvoiceItem) => product.status === "EXISTING",
       );
 
-      let items: any = [];
+      let items: any[] = [];
 
       logInfo("importProducts", "New products", JSON.stringify(newProducts));
 
@@ -243,7 +244,7 @@ export class ProductService {
     }
   }
 
-  public async deleteProduct(ownerId: string, id: string) {
+  public async deleteProduct(ownerId: string, id: string): Promise<APIGatewayProxyResultV2>   {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,

@@ -1,18 +1,19 @@
 import { dynamoDBService } from "../shared/ddb.service";
-import { extractedInvoiceSchema } from "../types/invoicesProcesser.schema";
+import { extractedInvoiceSchema } from "../schema/invoicesProcesser.schema";
 import { textractInvoiceExtractor } from "./textractExtractor";
 import { INVOICES_TABLE, INVOICE_BUCKET } from "../constants";
 import { logError, logInfo } from "../utils/logger";
 import { buildResponse } from "../utils/http";
+import { LambdaEvent } from "../types/invoices";
+import { event } from "../test/events/lambda";
 export class InvoiceProcesserService {
   constructor(
     private readonly ddbService = dynamoDBService,
     public readonly invoiceExtractor = textractInvoiceExtractor,
   ) {}
 
-  public async execute(event: any) {
+  public async execute(event: LambdaEvent): Promise<void> {
     try {
-
       const invoice = await this.ddbService.getItem(INVOICES_TABLE, {
         businessId: event.businessId,
         id: event.invoiceId,
@@ -23,7 +24,7 @@ export class InvoiceProcesserService {
           businessId: event.businessId,
           invoiceId: event.invoiceId,
         });
-        return buildResponse(404, { message: "Invoice not found" });
+        throw new Error("Invoice not found");
       }
 
       await this.ddbService.updateItems(
@@ -60,17 +61,21 @@ export class InvoiceProcesserService {
           "#total": "total",
         },
         ExpressionAttributeValues: {
-          ":invoiceDate": validated?.invoiceDate || '',
-          ":invoiceNumber": validated.invoiceNumber || '',
+          ":invoiceDate": validated?.invoiceDate || "",
+          ":invoiceNumber": validated.invoiceNumber || "",
           ":products": JSON.stringify(validated.products),
           ":supplier": validated?.supplier || {},
-          ":total": validated?.total || 0 ,
+          ":total": validated?.total || 0,
           ":status": "REVIEW",
           ":updatedAt": new Date().toISOString(),
         },
       };
-      
-      logInfo("InvoiceProcesserService", "Update invoice expression", updateInvoiceExpression);
+
+      logInfo(
+        "InvoiceProcesserService",
+        "Update invoice expression",
+        updateInvoiceExpression,
+      );
 
       await this.ddbService.updateItems(
         INVOICES_TABLE,

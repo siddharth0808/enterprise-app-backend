@@ -5,9 +5,10 @@ import {
   type AnalyzeExpenseResponse,
   type ExpenseField,
 } from "@aws-sdk/client-textract";
-import { InvoiceExtractor } from "../types/invoicesProcesser.interface";
+import { InvoiceExtractor } from "../types/invoicesProcesser";
 import { ExtractedInvoice } from "../types/invoicesProcesser";
 import { formatExpiryDate } from "../utils";
+import { logInfo } from "../utils/logger";
 export class TextractInvoiceExtractor implements InvoiceExtractor {
   private readonly textract = new TextractClient({});
 
@@ -114,7 +115,7 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
     const fields = group?.LineItemExpenseFields ?? [];
 
     let values: Record<string, any> = {};
-    const otherValues:any = {};
+    const otherValues:Record<string, any> = {};
     for (const field of fields) {
       const type = field.Type?.Text;
       const value = field.ValueDetection?.Text?.trim();
@@ -129,7 +130,7 @@ export class TextractInvoiceExtractor implements InvoiceExtractor {
       }
     }
     values = { ...values, ...otherValues };
-    console.log("Values::::", JSON.stringify(values))
+    logInfo("normalizeLineItem", "Values::::", JSON.stringify(values))
     const productName = values.ITEM || values.PRODUCT || values.DESCRIPTION;
     const pack =  values.PACK || values.PACKAGE || undefined;
     const quantity = this.parseNumber(values.QUANTITY || 0);

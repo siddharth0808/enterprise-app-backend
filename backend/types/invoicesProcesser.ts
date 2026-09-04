@@ -48,3 +48,10 @@ export interface ExtractedInvoice {
 
   total?: number;
 }
+
+export interface InvoiceExtractor {
+  extract(params: {
+    bucket: string;
+    documentKey: string;
+  }): Promise<ExtractedInvoice>;
+}

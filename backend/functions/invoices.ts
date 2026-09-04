@@ -38,6 +38,7 @@ export const handler = async (
       return getInvoiceReview
     }
 
+    // Upload a new invoice
     const body = event.body ? JSON.parse(event.body) : null;
     if (!body) {
       return buildResponse(400, {
