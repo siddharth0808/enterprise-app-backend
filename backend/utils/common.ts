@@ -37,3 +37,21 @@ export function formatExpiryDate(date: string) {
   }
   return date ? new Date(date).valueOf() :'';
 }
+
+export function formatSaleNumber(
+  financialYear: string,
+  sequence: number,
+): string {
+  return `SALE-${financialYear}-${String(sequence).padStart(5, "0")}`;
+}
+
+export function getFinancialYear(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+
+  if (month >= 4) {
+    return `${String(year).slice(-2)}-${String(year + 1).slice(-2)}`;
+  }
+
+  return `${String(year - 1).slice(-2)}-${String(year).slice(-2)}`;
+}

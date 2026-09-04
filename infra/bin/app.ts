@@ -33,6 +33,7 @@ const functions = new LambdaStack(app, `${APP_NAME}-lambda-${stage}`, {
   transactionsTable: data.transactionsTable,
   invoicesTable: data.invoicesTable,
   salesTable: data.salesTable,
+  counterTable: data.counterTable,
   inventoryFlowBucket: data.inventoryFlowBucket,
 });
 

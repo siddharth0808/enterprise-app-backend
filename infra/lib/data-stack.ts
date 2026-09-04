@@ -36,6 +36,7 @@ export class DataStack extends Stack {
   public readonly transactionsTable: dynamodb.Table;
   public readonly invoicesTable: dynamodb.Table;
   public readonly salesTable: dynamodb.Table;
+  public readonly counterTable: dynamodb.Table;
 
   public readonly inventoryFlowBucket: s3.Bucket;
 
@@ -100,6 +101,14 @@ export class DataStack extends Stack {
       `${APP_NAME}-salesTable-${props.stage}`,
       `${APP_NAME}-sales-${props.stage}`,
       { name: "businessId", type: dynamodb.AttributeType.STRING },
+      { name: "sk", type: dynamodb.AttributeType.STRING },
+    );
+
+      this.counterTable = createTable(
+      this,
+      `${APP_NAME}-counterTable-${props.stage}`,
+      `${APP_NAME}-counter-${props.stage}`,
+      { name: "PK", type: dynamodb.AttributeType.STRING },
       { name: "sk", type: dynamodb.AttributeType.STRING },
     );
 

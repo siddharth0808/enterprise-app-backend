@@ -14,6 +14,7 @@ export interface LambdaStackProps extends StackProps {
   transactionsTable: dynamodb.Table;
   invoicesTable: dynamodb.Table;
   salesTable: dynamodb.Table;
+  counterTable: dynamodb.Table,
   inventoryFlowBucket: s3.Bucket;
   stage?: string;
 }
@@ -119,9 +120,15 @@ export class LambdaStack extends Stack {
       {
         SALES_TABLE: props.salesTable.tableName,
         BUSINESS_TABLE: props.businessTable.tableName,
+        PRODUCTS_TABLE: props.productsTable.tableName,
+        COUNTERS_TABLE: props.counterTable.tableName,
+        TRANSACTIONS_TABLE: props.transactionsTable.tableName,
       },
     );
     this.grantDynamoDb(this.salesFn, props.salesTable, "readWrite");
+    this.grantDynamoDb(this.salesFn, props.productsTable, "readWrite");
+    this.grantDynamoDb(this.salesFn, props.transactionsTable, "readWrite");
+    this.grantDynamoDb(this.salesFn, props.counterTable, "readWrite");
     this.grantDynamoDb(this.salesFn, props.businessTable, "read");
   }
 

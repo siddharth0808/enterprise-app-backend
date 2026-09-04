@@ -9,14 +9,16 @@ export type PaymentMethod =
 export interface Sale {
   id: string;
   businessId: string;
+  SK: string;
   saleNumber: string;
 
-  itemCount: number;
-  totalQuantity: number;
+  items: CreateSaleLineItem[];
+  totalUnits: number;
 
-  subtotal: number;
-  discount: number;
-  totalAmount: number;
+  discount: Discount | null;
+  discountAmount: number;
+  subTotalAmt: number;
+  totalAmt: number;
 
   paymentMethod: PaymentMethod;
   status: SaleStatus;
@@ -28,8 +30,11 @@ export interface Sale {
 
 export interface CreateSaleLineItem {
   productId: string;
+  name:string;
   quantity: number;
   rate:number;
+  mrp:number;
+  total:number;
   currentStock: number;
 }
 
@@ -44,5 +49,8 @@ export interface Discount {
 export interface CreateSaleRequest {
   items: CreateSaleLineItem[];
   discount: Discount | null;
+  discountAmount: number;
+  subTotalAmt:number;
+  totalAmt:number;
   paymentMethod: PaymentMethod;
 }
