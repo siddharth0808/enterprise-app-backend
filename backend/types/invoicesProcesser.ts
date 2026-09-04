@@ -12,7 +12,7 @@ export interface ExtractedInvoiceItem {
   manufacturer?: string;
 
   batchNumber?: string;
-  expiryDate?: any;
+  expiryDate?: string;
 
   hsn?: string;
 
@@ -55,3 +55,11 @@ export interface InvoiceExtractor {
     documentKey: string;
   }): Promise<ExtractedInvoice>;
 }
+
+export type ExistingProduct = {
+  id?: string;
+  name: string;
+  currentStock?: number;
+  amount?: number | string;
+  expiryDate?: string;
+};

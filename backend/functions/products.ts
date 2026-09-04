@@ -35,7 +35,7 @@ export const handler = async (
 
   // Update an existing product
   if (method === "PATCH") {
-      const { id }: any = event.pathParameters;
+    const { id } = event.pathParameters as Record<string, string>;
 
     const body = JSON.parse(event.body ?? "{}");
     const required = ["name", "mrp", "rate", "expiryDate"];
@@ -50,7 +50,7 @@ export const handler = async (
 
   // Delete an existing product
   if (method === "DELETE") {
-      const { id }: any = event.pathParameters;
+    const { id } = event.pathParameters as Record<string, string>;
     const deleteProductRes = await service.deleteProduct(sub, id);
     return deleteProductRes;
   }

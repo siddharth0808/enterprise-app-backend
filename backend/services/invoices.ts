@@ -1,8 +1,9 @@
-import { getExtension } from "../utils";
+import { getExtension } from "../utils/common";
 import { dynamoDBService } from "../shared/ddb.service";
 import { s3Service } from "../shared/s3Bucket.service";
 import { lambdaService } from "../shared/lambda.service";
 import {
+  ExistingProduct,
   ExtractedInvoice,
   ExtractedInvoiceItem,
 } from "../types/invoicesProcesser";
@@ -18,7 +19,7 @@ import {
   MAX_FILE_SIZE,
 } from "../constants";
 import { CreateInvoiceRequest, LambdaEvent } from "../types/invoices";
-import { logError, logInfo } from "../utils/logger";
+import { getErrorMessage, logError, logInfo } from "../utils/logger";
 import { buildResponse } from "../utils/http";
 import { APIGatewayProxyResultV2 } from "aws-lambda";
 
@@ -113,10 +114,10 @@ export class UploadInvoiceService {
         uploadUrl,
         expiresIn: 900,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError("uploadInvoice", "Error uploading invoice", error);
       return buildResponse(500, {
-        message: error.message,
+        message: getErrorMessage(error),
       });
     }
   }
@@ -178,9 +179,9 @@ export class UploadInvoiceService {
       );
 
       return buildResponse(200, { invoiceId, status: "UPLOADED" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError("updateInvoiceStatus", "Error updating invoice status", error);
-      return buildResponse(500, { message: error.message });
+      return buildResponse(500, { message: getErrorMessage(error) });
     }
   }
 
@@ -206,9 +207,9 @@ export class UploadInvoiceService {
       }
 
       return buildResponse(200, { invoiceId, status: invoice.status });
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError("getInvoiceStatus", "Error getting invoice status", error);
-      return buildResponse(500, { message: error.message });
+      return buildResponse(500, { message: getErrorMessage(error) });
     }
   }
 
@@ -237,7 +238,7 @@ export class UploadInvoiceService {
 
       try {
         invoiceProducts = invoice?.products ? JSON.parse(invoice.products) : [];
-      } catch (error: any) {
+      } catch (error: unknown) {
         logError("getInvoiceReview", "Error parsing invoice products", error);
         return buildResponse(500, {
           message: "Error parsing invoice products",
@@ -283,9 +284,12 @@ export class UploadInvoiceService {
         JSON.stringify(existingProducts),
       );
 
-      let flatedExisitngProducts: any = [];
-      existingProducts.forEach((item: any) => {
-        flatedExisitngProducts = [...flatedExisitngProducts, ...item];
+      let flatedExisitngProducts: ExistingProduct[] = [];
+      existingProducts.forEach((item) => {
+        flatedExisitngProducts = [
+          ...flatedExisitngProducts,
+          ...(item as ExistingProduct[]),
+        ];
       });
 
       logInfo(
@@ -294,9 +298,13 @@ export class UploadInvoiceService {
         JSON.stringify(flatedExisitngProducts),
       );
 
-      let products: any = [];
+      let products: Array<ExtractedInvoiceItem & {
+        id: string;
+        status: string;
+        currentQuantity: number;
+      }> = [];
       if (!flatedExisitngProducts.length) {
-        products = invoiceProducts.map((product: any) => {
+        products = invoiceProducts.map((product: ExtractedInvoiceItem) => {
           return {
             ...product,
             id: randomUUID(),
@@ -305,9 +313,9 @@ export class UploadInvoiceService {
           };
         });
       } else {
-        products = invoiceProducts.map((product: any) => {
+        products = invoiceProducts.map((product: ExtractedInvoiceItem) => {
           const existingProduct = flatedExisitngProducts.find(
-            (e: any) => e.name === product.name,
+            (e: ExistingProduct) => e.name === product.name,
           );
 
           logInfo("getInvoiceReview", "existingProduct", existingProduct);
@@ -317,7 +325,7 @@ export class UploadInvoiceService {
                 ...product,
                 id: existingProduct?.id,
                 status: "EXISTING",
-                currentQuantity: existingProduct.currentStock,
+                currentQuantity: existingProduct.currentStock ?? 0,
                 amount: Number(existingProduct.amount) + Number(product.amount),
                 expiryDate: product.expiryDate
                   ? product.expiryDate
@@ -340,13 +348,13 @@ export class UploadInvoiceService {
         total: invoice.total,
       } as ExtractedInvoice);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError(
         "getInvoiceReview",
         "Error occurred while reviewing invoice",
         error,
       );
-      return buildResponse(500, { message: error.message });
+      return buildResponse(500, { message: getErrorMessage(error) });
     }
   }
 }

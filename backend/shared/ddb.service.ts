@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable preserve-caught-error */
 import {
   DynamoDBClient,
   UpdateItemCommandInput,
@@ -12,6 +14,7 @@ import {
   BatchWriteCommandInput,
   DeleteCommand,
   TransactWriteCommand,
+  NativeAttributeValue,
 } from "@aws-sdk/lib-dynamodb";
 import { UpdateItem } from "../types/common";
 import { MAX_BATCH_SIZE } from "../constants";
@@ -37,7 +40,7 @@ export class DynamoDBService {
     }
   }
 
-  public async putItems(tableName: string, Item: any) {
+  public async putItems(tableName: string, Item: Record<string, NativeAttributeValue>) {
     try {
       await ddb.send(
         new PutCommand({
@@ -51,7 +54,7 @@ export class DynamoDBService {
     }
   }
 
-  public async getItem(tableName: string, Key: any) {
+  public async getItem(tableName: string, Key: Record<string, NativeAttributeValue>) {
     try {
       const resposne = await ddb.send(
         new GetCommand({
@@ -65,7 +68,7 @@ export class DynamoDBService {
     }
   }
 
-  public async deleteItem(tableName: string, Key: any) {
+  public async deleteItem(tableName: string, Key: Record<string, NativeAttributeValue>) {
     try {
       const resposne = await ddb.send(
         new DeleteCommand({
@@ -84,7 +87,7 @@ export class DynamoDBService {
     Key: any,
     UpdateExpression: string,
     ExpressionAttributeNames: any,
-    ExpressionAttributeValues: any,
+    ExpressionAttributeValues:any,
   ) {
     try {
       const command: UpdateItemCommandInput = {
@@ -201,6 +204,36 @@ export class DynamoDBService {
           TransactItems: transactItems,
         }),
       );
+    } catch (error: any) {
+      throw Error(error.message);
+    }
+  }
+
+  public async getItemsWithLimit(
+    tableName: string,
+    KeyConditionExpression: any,
+    ExpressionAttributeValues: any,
+    limit: number,
+    lastEvaluatedKey?: Record<string, unknown>,
+  ) {
+    try {
+      const command = {
+        TableName: tableName,
+        KeyConditionExpression,
+        ExpressionAttributeValues,
+        Limit: Math.min(limit, 100),
+        ScanIndexForward: false,
+        ...(lastEvaluatedKey
+          ? {
+              ExclusiveStartKey: lastEvaluatedKey,
+            }
+          : {}),
+      };
+      const result = await ddb.send(new QueryCommand(command));
+      return {
+        items: result.Items ?? [],
+        lastEvaluatedKey: result.LastEvaluatedKey,
+      };
     } catch (error: any) {
       throw Error(error.message);
     }

@@ -6,7 +6,7 @@ export const handler = async (event: LambdaEvent) => {
   try {
     const service = new InvoiceProcesserService();
     await service.execute(event);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logError("InvoiceProcesser", "Error processing invoice", error);
   }
 };

@@ -1,4 +1,6 @@
-import {
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable preserve-caught-error */import {
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
@@ -38,7 +40,7 @@ export class S3Service {
     Key: string,
   ): Promise<boolean> {
     try {
-      const response = await s3.send(
+       await s3.send(
         new HeadObjectCommand({
           Bucket,
           Key,

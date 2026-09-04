@@ -7,8 +7,12 @@ export const handler = async (
 ) => {
   const method = event.requestContext.http.method;
   const { sub, fullName ='' } = getClaims(event);
-  const { productId }: any = event.pathParameters;
+  const { productId } = event.pathParameters ?? {};
   const service = new TransactionService()
+
+  if (!productId) {
+    return buildResponse(400, { message: "Missing productId" });
+  }
 
   // Update an existing transaction
   if (method === "POST") {

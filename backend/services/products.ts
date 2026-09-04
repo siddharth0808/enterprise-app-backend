@@ -3,13 +3,13 @@ import { randomUUID } from "crypto";
 import { CreateProductRequest, Product } from "../types/products";
 import { ExtractedInvoiceItem } from "../types/invoicesProcesser";
 import { BUSINESS_TABLE, PRODUCTS_TABLE } from "../constants";
-import { logError, logInfo } from "../utils/logger";
+import { getErrorMessage, logError, logInfo } from "../utils/logger";
 import { buildResponse } from "../utils/http";
 import { APIGatewayProxyResultV2 } from "aws-lambda";
 export class ProductService {
   constructor(private readonly ddbService = dynamoDBService) {}
 
-  public async getProducts(ownerId: string): Promise<APIGatewayProxyResultV2>   {
+  public async getProducts(ownerId: string): Promise<APIGatewayProxyResultV2> {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -28,13 +28,17 @@ export class ProductService {
       );
 
       return buildResponse(200, products ?? []);
-    } catch (error: any) {
-      logError("getProducts", error.message);
-      throw Error(error.message);
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      logError("getProducts", message);
+      return buildResponse(500, { message });
     }
   }
 
-  public async createProduct(ownerId: string, payload: Product): Promise<APIGatewayProxyResultV2>   {
+  public async createProduct(
+    ownerId: string,
+    payload: Product,
+  ): Promise<APIGatewayProxyResultV2> {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -73,13 +77,18 @@ export class ProductService {
       await this.ddbService.putItems(PRODUCTS_TABLE, item);
 
       return buildResponse(201, item);
-    } catch (error: any) {
-      logError("createProduct", error.message);
-      return buildResponse(500, { message: error.message });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      logError("createProduct", message);
+      return buildResponse(500, { message });
     }
   }
 
-  public async updateProduct(ownerId: string, productId: string, payload: Product): Promise<APIGatewayProxyResultV2>   {
+  public async updateProduct(
+    ownerId: string,
+    productId: string,
+    payload: Product,
+  ): Promise<APIGatewayProxyResultV2> {
     try {
       const {
         name,
@@ -137,16 +146,17 @@ export class ProductService {
       logInfo("updateProduct", "Updated items", JSON.stringify(item));
 
       return buildResponse(200, { ...item, id: productId });
-    } catch (error: any) {
-      logError("updateProduct", error.message);
-      return buildResponse(500, { message: error.message });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      logError("updateProduct", message);
+      return buildResponse(500, { message });
     }
   }
 
   public async importProducts(
     ownerId: string,
     products: ExtractedInvoiceItem[],
-  ): Promise<APIGatewayProxyResultV2>   {
+  ): Promise<APIGatewayProxyResultV2> {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -165,7 +175,7 @@ export class ProductService {
         (product: ExtractedInvoiceItem) => product.status === "EXISTING",
       );
 
-      let items: any[] = [];
+      let items: Record<string, unknown>[] = [];
 
       logInfo("importProducts", "New products", JSON.stringify(newProducts));
 
@@ -235,16 +245,20 @@ export class ProductService {
 
         await this.ddbService.batchUpdateItems(PRODUCTS_TABLE, updateItems);
 
-        items = [...items, ...existingProducts];
+        items = [...items, ...existingProducts.map((product) => ({ ...product }))];
       }
       return buildResponse(200, items);
-    } catch (error: any) {
-      logError("importProducts", error.message);
-      return buildResponse(500, { message: error.message });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      logError("importProducts", message);
+      return buildResponse(500, { message });
     }
   }
 
-  public async deleteProduct(ownerId: string, id: string): Promise<APIGatewayProxyResultV2>   {
+  public async deleteProduct(
+    ownerId: string,
+    id: string,
+  ): Promise<APIGatewayProxyResultV2> {
     try {
       const business = await this.ddbService.getBusinessByOwnerId(
         BUSINESS_TABLE,
@@ -262,9 +276,10 @@ export class ProductService {
       });
 
       return buildResponse(200, products);
-    } catch (error: any) {
-      logError("deleteProduct", error.message);
-      return buildResponse(500, { message: error.message });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      logError("deleteProduct", message);
+      return buildResponse(500, { message });
     }
   }
 }

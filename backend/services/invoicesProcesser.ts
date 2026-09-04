@@ -3,9 +3,7 @@ import { extractedInvoiceSchema } from "../schema/invoicesProcesser.schema";
 import { textractInvoiceExtractor } from "./textractExtractor";
 import { INVOICES_TABLE, INVOICE_BUCKET } from "../constants";
 import { logError, logInfo } from "../utils/logger";
-import { buildResponse } from "../utils/http";
 import { LambdaEvent } from "../types/invoices";
-import { event } from "../test/events/lambda";
 export class InvoiceProcesserService {
   constructor(
     private readonly ddbService = dynamoDBService,
@@ -87,7 +85,7 @@ export class InvoiceProcesserService {
         updateInvoiceExpression.ExpressionAttributeNames,
         updateInvoiceExpression.ExpressionAttributeValues,
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError("InvoiceProcesserService", "Error processing invoice", error);
     }
   }

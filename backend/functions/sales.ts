@@ -11,13 +11,15 @@ export const handler = async (event: APIGatewayProxyEventV2WithJWTAuthorizer) =>
     if (method === "POST") {
         const { sub, fullName = '' } = getClaims(event);
         const body = JSON.parse(event.body ?? "{}");
-        const result = await service.createSale({ ...body, businessId: sub });
+        const result = await service.createSale(sub,fullName, body);
         return result;
     }
 
     if (method === "GET") {
         const { sub } = getClaims(event);
-        const result = await service.getSales(sub);
+        const query = event.queryStringParameters ?? {};
+        const limit = query.limit ? Number(query.limit) : 10;
+        const result = await service.getSales(sub, limit, query?.nextToken);
         return result;
     }
 

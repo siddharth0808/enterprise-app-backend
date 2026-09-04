@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable preserve-caught-error */
 import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
 import { LambdaEvent } from "../types/invoices";
 

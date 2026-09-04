@@ -2,7 +2,7 @@ import {
   InventoryTransaction,
   UpdateTransactionRequest,
 } from "../types/transactions";
-import { getTransactionSign } from "../utils";
+import { getTransactionSign } from "../utils/common";
 import { randomUUID } from "crypto";
 import { dynamoDBService } from "../shared/ddb.service";
 
@@ -12,7 +12,7 @@ import {
   TRANSACTIONS_TABLE,
 } from "../constants";
 import { buildResponse } from "../utils/http";
-import { logError } from "../utils/logger";
+import { getErrorMessage, logError } from "../utils/logger";
 import { APIGatewayProxyResultV2 } from "aws-lambda";
 
 export class TransactionService {
@@ -98,9 +98,11 @@ export class TransactionService {
       await this.ddbService.transactWriteItems(transactonItems);
 
       return buildResponse(201, item);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError("updateTransaction", "Error updating transaction", error);
-      return buildResponse(500, { message: error.message });
+      return buildResponse(500, {
+        message:getErrorMessage(error),
+      });
     }
   }
 
@@ -114,9 +116,11 @@ export class TransactionService {
         { ":productId": productId },
       );
       return buildResponse(200, result);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError("getTransactions", "Error fetching transactions", error);
-      return buildResponse(500, { message: error.message });
+      return buildResponse(500, {
+        message:getErrorMessage(error),
+      });
     }
   }
 }

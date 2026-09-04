@@ -5,7 +5,7 @@ import { Business, UpdateBusinessRequest } from "../types/business";
 import { dynamoDBService } from "../shared/ddb.service";
 import { BUSINESS_TABLE } from "../constants";
 import { buildResponse } from "../utils/http";
-import { logError } from "../utils/logger";
+import { getErrorMessage, logError } from "../utils/logger";
 import { CreateBusinessRequest } from "../types/business";
 
 export class BusinessService {
@@ -28,9 +28,9 @@ export class BusinessService {
 
       await this.ddbService.putItems(BUSINESS_TABLE, business);
       return buildResponse(201, business);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError("setUpBusiness", "Error setting up business", error);
-      return buildResponse(500, { message: error.message });
+      return buildResponse(500, { message:getErrorMessage(error)});
     }
   }
 
@@ -42,9 +42,9 @@ export class BusinessService {
         { ":ownerId": ownerId },
       );
       return buildResponse(200, business ?? []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError("getBusiness", "Error fetching business", error);
-      return buildResponse(500, { message: error.message });
+      return buildResponse(500, { message:getErrorMessage(error)});
     }
   }
 
@@ -80,9 +80,9 @@ export class BusinessService {
         updateItems.ExpressionAttributeValues,
       );
       return buildResponse(201, response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError("updateBusiness", "Error updating business", error);
-      return buildResponse(500, { message: error.message });
+      return buildResponse(500, { message:getErrorMessage(error)});
     }
   }
 }
